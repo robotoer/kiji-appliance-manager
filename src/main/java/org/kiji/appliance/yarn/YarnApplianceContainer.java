@@ -8,12 +8,12 @@ import org.kiji.appliance.record.ApplianceInstanceStatus;
 
 /**
  */
-public abstract class YarnApplianceInstance implements ApplianceInstance {
+public abstract class YarnApplianceContainer implements ApplianceInstance {
   private final ApplianceInstanceId mInstanceId;
   private final ApplianceId mApplianceId;
   private final ApplianceInstanceConfiguration mConfiguration;
 
-  protected YarnApplianceInstance(
+  protected YarnApplianceContainer(
       final ApplianceInstanceId instanceId,
       final ApplianceId applianceId,
       final ApplianceInstanceConfiguration configuration
@@ -38,7 +38,7 @@ public abstract class YarnApplianceInstance implements ApplianceInstance {
     return mConfiguration;
   }
 
-  public static class ShellYarnApplicationInstance extends YarnApplianceInstance {
+  public static class ShellYarnApplicationContainer extends YarnApplianceContainer {
     public static final String GET_STATUS_UNSUPPORTED_MSG =
         "ShellYarnApplicationInstance can't monitor itself currently.";
     public static final String STOP_UNSUPPORTED_MSG =
@@ -46,7 +46,7 @@ public abstract class YarnApplianceInstance implements ApplianceInstance {
     public static final String START_UNSUPPORTED_MSG =
         "ShellYarnApplicationInstance can't start itself currently.";
 
-    public ShellYarnApplicationInstance(
+    public ShellYarnApplicationContainer(
         final ApplianceInstanceId instanceId,
         final ApplianceId applianceId,
         final ApplianceInstanceConfiguration configuration

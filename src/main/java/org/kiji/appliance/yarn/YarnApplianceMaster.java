@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -21,11 +23,18 @@ import org.apache.curator.x.discovery.ServiceDiscoveryBuilder;
 import org.apache.curator.x.discovery.ServiceInstance;
 import org.apache.curator.x.discovery.details.InstanceSerializer;
 import org.apache.curator.x.discovery.details.JsonInstanceSerializer;
+import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.net.NetUtils;
+import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.token.Token;
+import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.client.api.NMClient;
 import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -84,6 +93,28 @@ public class YarnApplianceMaster implements ApplianceManager {
   ) throws Exception {
     // Setup Yarn.
     {
+//      final Credentials credentials = UserGroupInformation.getCurrentUser().getCredentials();
+//      final DataOutputBuffer dob = new DataOutputBuffer();
+//      credentials.writeTokenStorageToStream(dob);
+//      // Now remove the AM->RM token so that containers cannot access it.
+//      final Iterator<Token<?>> iter = credentials.getAllTokens().iterator();
+//      LOG.info("Executing with tokens:");
+//      while (iter.hasNext()) {
+//        final Token<?> token = iter.next();
+//        LOG.info(token.toString());
+//        if (token.getKind().equals(AMRMTokenIdentifier.KIND_NAME)) {
+//          iter.remove();
+//        }
+//      }
+//      allTokens = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
+//
+//      // Create appSubmitterUgi and add original tokens to it
+//      String appSubmitterUserName =
+//          System.getenv(ApplicationConstants.Environment.USER.name());
+//      appSubmitterUgi =
+//          UserGroupInformation.createRemoteUser(appSubmitterUserName);
+//      appSubmitterUgi.addCredentials(credentials);
+
       // Initialize ResourceManager and NodeManager. AMRMClientAsync is used here because it runs a
       // heartbeat thread.
       mResourceManagerClient = AMRMClientAsync.createAMRMClientAsync(YARN_HEARTBEAT_INTERVAL_MS, null);
@@ -213,7 +244,7 @@ public class YarnApplianceMaster implements ApplianceManager {
   // ApplicationMaster logic
   public static void main(final String[] args) throws Exception {
     final YarnConfiguration yarnConf = new YarnConfiguration();
-    final String masterAddress = getHostname();
+    final String masterAddress = NetUtils.getHostname();
 
     // Parse cli arguments.
     final String masterId = args[0];
@@ -232,31 +263,6 @@ public class YarnApplianceMaster implements ApplianceManager {
     );
     LOG.info("Starting {}...", serviceMaster.toString());
     serviceMaster.start();
-  }
-
-  private static String getHostname() {
-    try {
-      final String result = InetAddress.getLocalHost().getHostName();
-      if (StringUtils.isNotEmpty(result)) {
-        return result;
-      }
-    } catch (UnknownHostException e) {
-      // failed;  try alternate means.
-      LOG.warn("Failed to resolve hostname from ip address. Is your DNS setup correctly?");
-    }
-
-    // try environment properties.
-    final String windowsHostname = System.getenv("COMPUTERNAME");
-    if (windowsHostname != null) {
-      return windowsHostname;
-    }
-    final String linuxHostname = System.getenv("HOSTNAME");
-    if (linuxHostname != null) {
-      return linuxHostname;
-    }
-
-    // undetermined.
-    return null;
   }
 
   @Override
