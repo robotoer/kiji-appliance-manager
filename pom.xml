@@ -20,15 +20,15 @@
   -->
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.kiji.scoring</groupId>
-  <artifactId>kiji-scoring-server</artifactId>
-  <version>0.13.0-SNAPSHOT</version>
+  <groupId>org.kiji.appliance</groupId>
+  <artifactId>kiji-appliance-manager</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <parent>
     <groupId>org.kiji.pom</groupId>
     <artifactId>root-pom</artifactId>
-    <version>1.1.5</version>
+    <version>1.1.6-SNAPSHOT</version>
   </parent>
 
   <properties>
@@ -37,10 +37,10 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <curator.version>2.4.1</curator.version>
+    <!-- Have to use the 8.x branch for java 6 compatibility. -->
     <jetty.version>8.1.14.v20131031</jetty.version>
     <yarn.version>2.3.0-cdh5.0.0</yarn.version>
 
-    <fake-hbase.version>0.1.5</fake-hbase.version>
     <junit.version>4.11</junit.version>
   </properties>
 
@@ -255,21 +255,6 @@
     </dependency>
 
     <dependency>
-      <groupId>org.kiji.testing</groupId>
-      <artifactId>fake-hbase</artifactId>
-      <version>${fake-hbase.version}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.kiji.schema</groupId>
-      <artifactId>kiji-schema</artifactId>
-      <version>${kiji-schema.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-yarn-server-tests</artifactId>
       <version>${yarn.version}</version>
@@ -280,35 +265,6 @@
 
   <build>
     <plugins>
-      <plugin>
-        <!--
-            ScoringServer depends on the oldest version of KijiSchema / KIJIMR that supports it.
-            To test whether the latest Kiji dependency SNAPSHOTs have introduced a regression:
-
-            Run the following commands in your shell
-
-            mvn versions:update-properties -N # Update the kiji-*.version properties
-                                              # in the top-level pom file; don't recurse.
-            mvn clean verify                  # Uses the new snapshot versions
-            mvn versions:revert               # Revert the pom file to before update-properties.
-                                    # Do not check in new Kiji SNAPSHOT dependencies in the pom.
-        -->
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>versions-maven-plugin</artifactId>
-        <configuration>
-          <includeProperties>
-            kiji-schema.version
-          </includeProperties>
-        </configuration>
-        <dependencies>
-          <dependency>
-            <groupId>org.kiji.schema</groupId>
-            <artifactId>kiji-schema</artifactId>
-            <version>${kiji-schema.version}</version>
-          </dependency>
-        </dependencies>
-      </plugin>
-
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
