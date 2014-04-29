@@ -116,6 +116,10 @@ public class ApplianceTest {
 
     startMiniYarnCluster();
 
+//    LOG.info("Sleeping to wait for YARN to start...");
+//    Thread.sleep(10000);
+//    LOG.info("Done sleeping to wait for YARN to start...");
+
 //    final YarnConfiguration baseConfig = getConfig();
 //    final YarnApplianceManagerFactory managerFactory = new YarnApplianceManagerFactory(baseConfig);
 //
@@ -125,6 +129,8 @@ public class ApplianceTest {
 ////    manager.listAppliances();
 
     simple(getConfig());
+
+//    Thread.sleep(10000);
 
     stopMiniYarnCluster();
   }

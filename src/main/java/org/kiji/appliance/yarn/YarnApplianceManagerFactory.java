@@ -3,6 +3,7 @@ package org.kiji.appliance.yarn;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Map;
 
@@ -11,6 +12,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
@@ -41,6 +46,7 @@ import org.kiji.appliance.record.ApplianceManagerStatus;
 public class YarnApplianceManagerFactory implements ApplianceManagerFactory {
   private static final Logger LOG = LoggerFactory.getLogger(YarnApplianceManagerFactory.class);
   public static final String APPLICATION_MASTER_NAME = "service-master-1";
+  public static final String DEFAULT_QUEUE = "default";
 
   private YarnClient mYarnClient;
 
@@ -143,6 +149,29 @@ public class YarnApplianceManagerFactory implements ApplianceManagerFactory {
         appContainerContext.setLocalResources(localResources);
         appContainerContext.setEnvironment(masterEnvVars);
 
+        if (UserGroupInformation.isSecurityEnabled()) {
+          final Credentials credentials = new Credentials();
+          final String tokenRenewer = config.get(YarnConfiguration.RM_PRINCIPAL);
+          if (tokenRenewer == null || tokenRenewer.length() == 0) {
+            throw new IOException(
+                "Can't get Master Kerberos principal for the RM to use as renewer");
+          }
+          final FileSystem fs = FileSystem.get(config);
+          // For now, only getting tokens for the default file-system.
+          final Token<?>[] tokens =
+              fs.addDelegationTokens(tokenRenewer, credentials);
+          if (tokens != null) {
+            for (Token<?> token : tokens) {
+              LOG.info("Got dt for " + fs.getUri() + "; " + token);
+            }
+          }
+          final DataOutputBuffer dob = new DataOutputBuffer();
+          credentials.writeTokenStorageToStream(dob);
+          final ByteBuffer fsTokens = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
+          appContainerContext.setTokens(fsTokens);
+        } else {
+          LOG.info("--------> Security is DISABLED");
+        }
 //        appContainerContext.setTokens(ByteBuffer.wrap(WritableUtils.toByteArray(mYarnClient.getAMRMToken(appContext.getApplicationId()))));
       }
 
@@ -150,7 +179,7 @@ public class YarnApplianceManagerFactory implements ApplianceManagerFactory {
       appContext.setApplicationName(appName);
       appContext.setAMContainerSpec(appContainerContext);
       appContext.setResource(Resource.newInstance(appMemory, appCores));
-      appContext.setQueue("default");
+      appContext.setQueue(DEFAULT_QUEUE);
     }
 
     // Submit application

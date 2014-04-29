@@ -80,9 +80,10 @@ public class YarnApplianceMaster implements ApplianceManager {
   // Curator fields.
   private final CuratorFramework mCuratorClient;
   private final InstanceSerializer<ServiceMasterDetails> mJsonSerializer;
-
-  // Jetty fields.
   private final ServiceInstance<ServiceMasterDetails> mThisInstance;
+
+  private final String mMasterAddress;
+  private final int mMasterPort;
 
   public YarnApplianceMaster(
       final String masterId,
@@ -91,6 +92,8 @@ public class YarnApplianceMaster implements ApplianceManager {
       final String curatorUrl,
       final YarnConfiguration yarnConf
   ) throws Exception {
+    mMasterAddress = masterAddress;
+    mMasterPort = masterPort;
     // Setup Yarn.
     {
 //      final Credentials credentials = UserGroupInformation.getCurrentUser().getCredentials();
@@ -162,7 +165,7 @@ public class YarnApplianceMaster implements ApplianceManager {
     // Register with ResourceManager.
     // TODO: Are these supposed to not be blank values?
     LOG.info("Registering YarnApplianceMaster...");
-    mResourceManagerClient.registerApplicationMaster("", 0, "");
+    mResourceManagerClient.registerApplicationMaster(mMasterAddress, mMasterPort, "");
     LOG.info("Registered YarnApplianceMaster...");
 
     // Register with Curator's service discovery mechanism.
@@ -282,6 +285,14 @@ public class YarnApplianceMaster implements ApplianceManager {
       final String curatorAddress
   ) {
     return String.format("%s %d %s", masterName, masterPort, curatorAddress);
+  }
+
+  public String getMasterAddress() {
+    return mMasterAddress;
+  }
+
+  public int getMasterPort() {
+    return mMasterPort;
   }
 
   public static class ServiceMasterDetails {
