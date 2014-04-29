@@ -101,10 +101,10 @@ public class YarnApplianceMaster implements ApplianceManager {
 //      credentials.writeTokenStorageToStream(dob);
 //      // Now remove the AM->RM token so that containers cannot access it.
 //      final Iterator<Token<?>> iter = credentials.getAllTokens().iterator();
-//      LOG.info("Executing with tokens:");
+//      System.out.println("Executing with tokens:");
 //      while (iter.hasNext()) {
 //        final Token<?> token = iter.next();
-//        LOG.info(token.toString());
+//        System.out.println(token.toString());
 //        if (token.getKind().equals(AMRMTokenIdentifier.KIND_NAME)) {
 //          iter.remove();
 //        }
@@ -164,9 +164,9 @@ public class YarnApplianceMaster implements ApplianceManager {
   public void start() throws Exception {
     // Register with ResourceManager.
     // TODO: Are these supposed to not be blank values?
-    LOG.info("Registering YarnApplianceMaster...");
+    System.out.println("Registering YarnApplianceMaster...");
     mResourceManagerClient.registerApplicationMaster(mMasterAddress, mMasterPort, "");
-    LOG.info("Registered YarnApplianceMaster...");
+    System.out.println("Registered YarnApplianceMaster...");
 
     // Register with Curator's service discovery mechanism.
     final ServiceDiscovery<ServiceMasterDetails> serviceDiscovery = getServiceDiscovery();
@@ -194,7 +194,7 @@ public class YarnApplianceMaster implements ApplianceManager {
     }
 
     // Unregister with ResourceManager.
-    LOG.info("Unregistering YarnApplianceMaster...");
+    System.out.println("Unregistering YarnApplianceMaster...");
     mResourceManagerClient.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED, "", "");
   }
 
@@ -208,21 +208,21 @@ public class YarnApplianceMaster implements ApplianceManager {
       final ApplianceConfiguration configuration
   ) {
     // Allocate new resource containers to execute the service.
-    LOG.info("Received a deploy call!");
+    System.out.println("Received a deploy call!");
     return null;
   }
 
   @Override
   public ApplianceStatus undeployAppliance(final ApplianceId id) {
     // Get a handle to the required resource containers to kill their corresponding service.
-    LOG.info("Received an undeploy call!");
+    System.out.println("Received an undeploy call!");
     return null;
   }
 
   @Override
   public ApplianceInstanceStatus undeployApplianceInstance(final ApplianceInstanceId id) {
     // Get a handle to the required resource containers to kill their corresponding service instance.
-    LOG.info("Received an undeploy call!");
+    System.out.println("Received an undeploy call!");
     return null;
   }
 
@@ -231,7 +231,7 @@ public class YarnApplianceMaster implements ApplianceManager {
     // Dump:
     //  - Services that the ApplianceManager is aware of.
     //  - Actual getStatus of the corresponding resource containers.
-    LOG.info("Received a list call!");
+    System.out.println("Received a list call!");
     return null;
   }
 
@@ -240,7 +240,7 @@ public class YarnApplianceMaster implements ApplianceManager {
     // Dump:
     //  - Instances that the Service is composed of.
     //  - Actual getStatus of the corresponding service instances.
-    LOG.info("Received a list call!");
+    System.out.println("Received a list call!");
     return null;
   }
 
@@ -265,6 +265,7 @@ public class YarnApplianceMaster implements ApplianceManager {
         yarnConf
     );
     LOG.info("Starting {}...", serviceMaster.toString());
+    // System.out.println("Starting {}...", serviceMaster.toString());
     serviceMaster.start();
   }
 

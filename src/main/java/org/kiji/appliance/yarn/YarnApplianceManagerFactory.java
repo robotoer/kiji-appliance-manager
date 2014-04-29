@@ -47,6 +47,7 @@ public class YarnApplianceManagerFactory implements ApplianceManagerFactory {
   private static final Logger LOG = LoggerFactory.getLogger(YarnApplianceManagerFactory.class);
   public static final String APPLICATION_MASTER_NAME = "service-master-1";
   public static final String DEFAULT_QUEUE = "default";
+  public static final String DEBUG_FLAGS = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005";
 
   private YarnClient mYarnClient;
 
@@ -84,12 +85,18 @@ public class YarnApplianceManagerFactory implements ApplianceManagerFactory {
 ////            ApplicationConstants.LOG_DIR_EXPANSION_VAR,
 ////            ApplicationConstants.LOG_DIR_EXPANSION_VAR
 //        );
-        final String loggedCommand = String.format(
-            "${JAVA_HOME}/bin/java %s %s %s",
-            YarnApplianceMaster.YARN_SERVICE_MASTER_JAVA_FLAGS,
-            YarnApplianceMaster.class.getName(),
-            YarnApplianceMaster.prepareArgs(APPLICATION_MASTER_NAME, appAdminPort, curatorAddress)
-        );
+//        final String loggedCommand = String.format(
+//            "${JAVA_HOME}/bin/java %s %s %s %s",
+////            "${JAVA_HOME}/bin/java %s %s %s 1>%s/stdout 2>%s/stderr",
+//            YarnApplianceMaster.YARN_SERVICE_MASTER_JAVA_FLAGS,
+//            DEBUG_FLAGS,
+////            "",""
+//            YarnApplianceMaster.class.getName(),
+//            YarnApplianceMaster.prepareArgs(APPLICATION_MASTER_NAME, appAdminPort, curatorAddress)
+////            ApplicationConstants.LOG_DIR_EXPANSION_VAR,
+////            ApplicationConstants.LOG_DIR_EXPANSION_VAR
+//        );
+        final String loggedCommand = "/bin/date";
         LOG.info("Launching service application master with command: {}", loggedCommand);
         appContainerContext.setCommands(Collections.singletonList(loggedCommand));
 
@@ -230,6 +237,24 @@ public class YarnApplianceManagerFactory implements ApplianceManagerFactory {
 
 //    return new YarnApplianceManager(mYarnConf.get())
     return null;
+  }
+
+  public static void main(final String[] args) throws Exception {
+    final YarnConfiguration baseConfig = new YarnConfiguration();
+    final String appName = "test-yarn-application";
+//    final String appCommand = "echo hello world";
+    final int appMemory = 256;
+    final int appPort = 8080;
+    final int appCores = 1;
+    final String curatorAddress = "localhost:2181";
+
+    final YarnApplianceManagerFactory managerFactory = new YarnApplianceManagerFactory(baseConfig);
+
+    final ApplianceManagerConfiguration managerConfiguration =
+        new ApplianceManagerConfiguration(appName, appMemory, appPort, appCores, curatorAddress);
+    final ApplianceManagerStatus managerId = managerFactory.start(managerConfiguration);
+//    final ApplianceManager manager = managerFactory.connect(managerId.getManagerId());
+//    manager.listAppliances();
   }
 
   @Override
