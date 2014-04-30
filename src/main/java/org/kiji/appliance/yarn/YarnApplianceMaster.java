@@ -114,9 +114,9 @@ public class YarnApplianceMaster implements ApplianceManager {
 
     // Register with Curator's service discovery mechanism.
     final ServiceDiscovery<ServiceMasterDetails> serviceDiscovery = getServiceDiscovery();
+    serviceDiscovery.start();
     try {
       // Does this actually register the application master?
-      serviceDiscovery.start();
       serviceDiscovery.registerService(mThisInstance);
 //
 //      final Collection<String> names = serviceDiscovery.queryForNames();
@@ -245,5 +245,6 @@ public class YarnApplianceMaster implements ApplianceManager {
   }
 
   public static class ServiceMasterDetails {
+    // Add some data here (This can't be empty).
   }
 }
