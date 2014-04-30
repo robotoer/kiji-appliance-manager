@@ -1,7 +1,7 @@
 package org.kiji.appliance.manager;
 
-import java.net.URL;
-
+import com.google.common.collect.Lists;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.server.MiniYARNCluster;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.ResourceScheduler;
@@ -10,8 +10,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.kiji.appliance.ApplianceManager;
-import org.kiji.appliance.record.ApplianceConfiguration;
 import org.kiji.appliance.record.ApplianceManagerConfiguration;
 import org.kiji.appliance.record.ApplianceManagerStatus;
 import org.kiji.appliance.yarn.YarnApplianceManagerFactory;
@@ -100,7 +98,7 @@ public class ApplianceTest {
     final YarnApplianceManagerFactory managerFactory = new YarnApplianceManagerFactory(baseConfig);
 
     final ApplianceManagerConfiguration managerConfiguration =
-        new ApplianceManagerConfiguration(appName, appMemory, appPort, appCores, curatorAddress);
+        new ApplianceManagerConfiguration(appName, appMemory, appPort, appCores, curatorAddress, Lists.<Path>newArrayList());
     final ApplianceManagerStatus managerId = managerFactory.start(managerConfiguration);
 //    final ApplianceManager manager = managerFactory.connect(managerId.getManagerId());
 //    manager.listAppliances();

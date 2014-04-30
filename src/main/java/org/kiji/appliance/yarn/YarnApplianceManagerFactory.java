@@ -2,11 +2,11 @@ package org.kiji.appliance.yarn;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Map;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -251,7 +251,7 @@ public class YarnApplianceManagerFactory implements ApplianceManagerFactory {
     final YarnApplianceManagerFactory managerFactory = new YarnApplianceManagerFactory(baseConfig);
 
     final ApplianceManagerConfiguration managerConfiguration =
-        new ApplianceManagerConfiguration(appName, appMemory, appPort, appCores, curatorAddress);
+        new ApplianceManagerConfiguration(appName, appMemory, appPort, appCores, curatorAddress, Lists.<Path>newArrayList());
     final ApplianceManagerStatus managerId = managerFactory.start(managerConfiguration);
 //    final ApplianceManager manager = managerFactory.connect(managerId.getManagerId());
 //    manager.listAppliances();
