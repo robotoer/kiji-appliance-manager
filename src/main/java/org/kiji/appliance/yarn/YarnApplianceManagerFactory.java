@@ -190,26 +190,4 @@ public class YarnApplianceManagerFactory implements ApplianceManagerFactory, Clo
     // TODO: What if this was never opened/started?
     mYarnClient.close();
   }
-
-  // TODO: Move this into a CLI tool.
-  public static void main(String[] args) throws Exception {
-    // TODO: Write this such that it can be connected with a CLI tool
-    // TEMPORARY HARDCODED VALUES
-    final Path jarPath = new Path("hdfs://localhost:8020/user/robert/kiji-appliance-manager-0.1.0-SNAPSHOT.jar");
-
-    // Create a new ApplianceManagerFactory.
-    final YarnApplianceManagerFactory managerFactory = new YarnApplianceManagerFactory(new YarnConfiguration());
-
-    // Start the ApplianceManager.
-    final ApplianceManagerConfiguration managerConfiguration = new ApplianceManagerConfiguration(
-        "appliance-manager-1",
-        256,
-        0,
-        1,
-        "localhost:2181",
-        Lists.newArrayList(jarPath)
-    );
-    System.out.println(String.format("Starting application with configuration: %s", managerConfiguration.toString()));
-    managerFactory.start(managerConfiguration);
-  }
 }

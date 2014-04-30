@@ -1,8 +1,18 @@
 package org.kiji.appliance.yarn;
 
+import java.util.Collection;
 import java.util.List;
 
 import com.google.common.base.Objects;
+import org.apache.curator.RetryPolicy;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.x.discovery.ServiceDiscovery;
+import org.apache.curator.x.discovery.ServiceDiscoveryBuilder;
+import org.apache.curator.x.discovery.ServiceInstance;
+import org.apache.curator.x.discovery.details.InstanceSerializer;
+import org.apache.curator.x.discovery.details.JsonInstanceSerializer;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
@@ -28,16 +38,16 @@ public class YarnApplianceMaster implements ApplianceManager {
   public static final String BASE_APPLIANCE_DISCOVERY_PATH = "/org/kiji/appliances";
   public static final int YARN_HEARTBEAT_INTERVAL_MS = 500;
   public static final String CURATOR_SERVICE_NAME = "appliance-master";
-//  public static final RetryPolicy CURATOR_RETRY_POLICY = new ExponentialBackoffRetry(1000, 3);
+  public static final RetryPolicy CURATOR_RETRY_POLICY = new ExponentialBackoffRetry(1000, 3);
 
   // Yarn connections.
   private final AMRMClientAsync<AMRMClient.ContainerRequest> mResourceManagerClient;
   private final NMClient mNodeManagerClient;
 
-//  // Curator connections.
-//  private final CuratorFramework mCuratorClient;
-//  private final InstanceSerializer<ServiceMasterDetails> mJsonSerializer;
-//  private final ServiceInstance<ServiceMasterDetails> mThisInstance;
+  // Curator connections.
+  private final CuratorFramework mCuratorClient;
+  private final InstanceSerializer<ServiceMasterDetails> mJsonSerializer;
+  private final ServiceInstance<ServiceMasterDetails> mThisInstance;
 
   private final String mMasterAddress;
   private final int mMasterPort;
@@ -65,35 +75,35 @@ public class YarnApplianceMaster implements ApplianceManager {
       mNodeManagerClient.start();
     }
 
-//    // Setup ServiceProvider.
-//    {
-//      // Setup a zookeeper connection.
-//      mCuratorClient =
-//          CuratorFrameworkFactory.newClient(curatorUrl, CURATOR_RETRY_POLICY);
-//
-//      mThisInstance = ServiceInstance
-//          .<ServiceMasterDetails>builder()
-//          .id(masterId)
-//          .name(CURATOR_SERVICE_NAME)
-//          .address(masterAddress)
-//          .port(masterPort)
-//          .payload(new ServiceMasterDetails())
-//          .build();
-//
-//      mJsonSerializer =
-//          new JsonInstanceSerializer<ServiceMasterDetails>(ServiceMasterDetails.class);
-//    }
+    // Setup ServiceProvider.
+    {
+      // Setup a zookeeper connection.
+      mCuratorClient =
+          CuratorFrameworkFactory.newClient(curatorUrl, CURATOR_RETRY_POLICY);
+
+      mThisInstance = ServiceInstance
+          .<ServiceMasterDetails>builder()
+          .id(masterId)
+          .name(CURATOR_SERVICE_NAME)
+          .address(masterAddress)
+          .port(masterPort)
+          .payload(new ServiceMasterDetails())
+          .build();
+
+      mJsonSerializer =
+          new JsonInstanceSerializer<ServiceMasterDetails>(ServiceMasterDetails.class);
+    }
   }
 
-//  private ServiceDiscovery<ServiceMasterDetails> getServiceDiscovery() {
-//    return ServiceDiscoveryBuilder
-//        .builder(ServiceMasterDetails.class)
-//        .client(mCuratorClient)
-//        .basePath(BASE_APPLIANCE_DISCOVERY_PATH)
-//        .serializer(mJsonSerializer)
-//        .thisInstance(mThisInstance)
-//        .build();
-//  }
+  private ServiceDiscovery<ServiceMasterDetails> getServiceDiscovery() {
+    return ServiceDiscoveryBuilder
+        .builder(ServiceMasterDetails.class)
+        .client(mCuratorClient)
+        .basePath(BASE_APPLIANCE_DISCOVERY_PATH)
+        .serializer(mJsonSerializer)
+        .thisInstance(mThisInstance)
+        .build();
+  }
 
   public void start() throws Exception {
     // Register with ResourceManager.
@@ -102,30 +112,30 @@ public class YarnApplianceMaster implements ApplianceManager {
     mResourceManagerClient.registerApplicationMaster(mMasterAddress, mMasterPort, "");
     System.out.println("Registered YarnApplianceMaster...");
 
-//    // Register with Curator's service discovery mechanism.
-//    final ServiceDiscovery<ServiceMasterDetails> serviceDiscovery = getServiceDiscovery();
-//    try {
-//      // Does this actually register the application master?
-//      serviceDiscovery.start();
-//      serviceDiscovery.registerService(mThisInstance);
+    // Register with Curator's service discovery mechanism.
+    final ServiceDiscovery<ServiceMasterDetails> serviceDiscovery = getServiceDiscovery();
+    try {
+      // Does this actually register the application master?
+      serviceDiscovery.start();
+      serviceDiscovery.registerService(mThisInstance);
 //
 //      final Collection<String> names = serviceDiscovery.queryForNames();
 //
 //      names.size();
-//    } finally {
-//      serviceDiscovery.close();
-//    }
+    } finally {
+      serviceDiscovery.close();
+    }
   }
 
   public void stop() throws Exception {
-//    // Unregister with Curator's service discovery mechanism.
-//    final ServiceDiscovery<ServiceMasterDetails> serviceDiscovery = getServiceDiscovery();
-//    try {
-//      serviceDiscovery.start();
-//      serviceDiscovery.unregisterService(mThisInstance);
-//    } finally {
-//      serviceDiscovery.close();
-//    }
+    // Unregister with Curator's service discovery mechanism.
+    final ServiceDiscovery<ServiceMasterDetails> serviceDiscovery = getServiceDiscovery();
+    try {
+      serviceDiscovery.start();
+      serviceDiscovery.unregisterService(mThisInstance);
+    } finally {
+      serviceDiscovery.close();
+    }
 
     // Unregister with ResourceManager.
     System.out.println("Unregistering YarnApplianceMaster...");
@@ -200,7 +210,7 @@ public class YarnApplianceMaster implements ApplianceManager {
     System.out.println(String.format("Starting ApplianceMaster: %s", applianceMaster.toString()));
     applianceMaster.start();
     System.out.println("Sleeping for 10 seconds.");
-    Thread.sleep(10000);
+    Thread.sleep(30000);
     System.out.println("Done sleeping for 10 seconds.");
     System.out.println("Stopping ApplianceMaster...");
     applianceMaster.stop();
@@ -212,9 +222,9 @@ public class YarnApplianceMaster implements ApplianceManager {
     return Objects.toStringHelper(this)
         .add("mResourceManagerClient", mResourceManagerClient)
         .add("mNodeManagerClient", mNodeManagerClient)
-//        .add("mCuratorClient", mCuratorClient)
-//        .add("mJsonSerializer", mJsonSerializer)
-//        .add("mThisInstance", mThisInstance)
+        .add("mCuratorClient", mCuratorClient)
+        .add("mJsonSerializer", mJsonSerializer)
+        .add("mThisInstance", mThisInstance)
         .toString();
   }
 
