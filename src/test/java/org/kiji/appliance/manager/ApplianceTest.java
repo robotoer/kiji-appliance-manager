@@ -70,7 +70,7 @@ public class ApplianceTest {
 //    ApplianceDiscoveryBuilder
 //        .builder(YarnApplianceMaster.ApplianceMasterDetails.class)
 //        .client(mCuratorClient)
-//        .basePath(BASE_SERVICE_DISCOVERY_PATH)
+//        .basePath(BASE_APPLIANCE_DISCOVERY_PATH)
 //        .serializer(mJsonSerializer)
 //        .thisInstance(mThisInstance)
 //        .build();

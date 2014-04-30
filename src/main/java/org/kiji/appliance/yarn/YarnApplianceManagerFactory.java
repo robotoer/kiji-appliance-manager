@@ -1,22 +1,21 @@
 package org.kiji.appliance.yarn;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DataOutputBuffer;
-import org.apache.hadoop.security.Credentials;
-import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
+import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
@@ -25,7 +24,6 @@ import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.hadoop.yarn.api.records.LocalResourceVisibility;
 import org.apache.hadoop.yarn.api.records.Resource;
-import org.apache.hadoop.yarn.api.records.URL;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.client.api.YarnClientApplication;
@@ -34,8 +32,6 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.util.Apps;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.kiji.appliance.ApplianceManager;
 import org.kiji.appliance.ApplianceManagerFactory;
@@ -43,157 +39,123 @@ import org.kiji.appliance.record.ApplianceManagerConfiguration;
 import org.kiji.appliance.record.ApplianceManagerId;
 import org.kiji.appliance.record.ApplianceManagerStatus;
 
-public class YarnApplianceManagerFactory implements ApplianceManagerFactory {
-  private static final Logger LOG = LoggerFactory.getLogger(YarnApplianceManagerFactory.class);
-  public static final String APPLICATION_MASTER_NAME = "service-master-1";
+public class YarnApplianceManagerFactory implements ApplianceManagerFactory, Closeable {
+  public static final String CONNECT_IS_NOT_CURRENTLY_SUPPORTED_MSG = "Connect is not currently supported.";
+  public static final String STOP_IS_NOT_CURRENTLY_SUPPORTED_MSG = "Stop is not currently supported";
+
   public static final String DEFAULT_QUEUE = "default";
-  public static final String DEBUG_FLAGS = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005";
 
-  private YarnClient mYarnClient;
+  private final YarnClient mYarnClient;
 
-  public YarnApplianceManagerFactory(final YarnConfiguration yarnConf) {
-    // Create yarnClient
+  public YarnApplianceManagerFactory(final YarnConfiguration configuration) {
     mYarnClient = YarnClient.createYarnClient();
-    mYarnClient.init(yarnConf);
+    mYarnClient.init(configuration);
     mYarnClient.start();
   }
 
-  public void launchApplicationMaster(
-      final String appName,
-      final int appMemory,
-      final int appCores,
-      final int appAdminPort,
-      final String curatorAddress
-  ) throws IOException, YarnException, InterruptedException {
+  /**
+   * Creates a local resource definition for a path referring to a file on HDFS.
+   *
+   * @param resourcePath to a file on HDFS.
+   * @return a local resource for an appliance.
+   */
+  private LocalResource pathToLocalResource(
+      final Path resourcePath
+  ) throws IOException {
+    final FileStatus resourceStat = FileSystem.get(mYarnClient.getConfig()).getFileStatus(resourcePath);
+    Preconditions.checkArgument(resourceStat.isFile());
+
+    final LocalResource appMasterJar = Records.newRecord(LocalResource.class);
+    appMasterJar.setResource(ConverterUtils.getYarnUrlFromPath(resourcePath));
+    appMasterJar.setSize(resourceStat.getLen());
+    appMasterJar.setTimestamp(resourceStat.getModificationTime());
+    appMasterJar.setType(LocalResourceType.FILE);
+    appMasterJar.setVisibility(LocalResourceVisibility.PUBLIC);
+
+    return appMasterJar;
+  }
+
+  private void setupAppMasterEnv(
+      final Map<String, String> appMasterEnv
+  ) {
+    for (String c : mYarnClient.getConfig().getStrings(
+        YarnConfiguration.YARN_APPLICATION_CLASSPATH,
+        YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH)) {
+      Apps.addToEnvironment(appMasterEnv, Environment.CLASSPATH.name(),
+          c.trim());
+    }
+    Apps.addToEnvironment(appMasterEnv,
+        Environment.CLASSPATH.name(),
+        Environment.PWD.$() + File.separator + "*"
+    );
+  }
+
+  @Override
+  public ApplianceManager connect(final ApplianceManagerId id) {
+    throw new UnsupportedOperationException(CONNECT_IS_NOT_CURRENTLY_SUPPORTED_MSG);
+  }
+
+  @Override
+  public ApplianceManagerStatus start(
+      final ApplianceManagerConfiguration managerConfiguration
+  ) throws IOException, InterruptedException, YarnException {
     // Create application via yarnClient
     final YarnClientApplication app = mYarnClient.createApplication();
 
-    // Populate the submission context.
-    final ApplicationSubmissionContext appContext = app.getApplicationSubmissionContext();
+    // Set up the container launch context for the application master
+    final ContainerLaunchContext amContainer = Records.newRecord(ContainerLaunchContext.class);
+    final String loggedCommand = String.format(
+        "${JAVA_HOME}/bin/java %s %s %s 1>%s/stdout 2>%s/stderr",
+        YarnApplianceMaster.YARN_APPLIANCE_MASTER_JAVA_FLAGS,
+        YarnApplianceMaster.class.getName(),
+        YarnApplianceMaster.prepareArgs(
+            managerConfiguration.getName(),
+            managerConfiguration.getPort(),
+            managerConfiguration.getCuratorAddress()
+        ),
+        ApplicationConstants.LOG_DIR_EXPANSION_VAR,
+        ApplicationConstants.LOG_DIR_EXPANSION_VAR
+    );
+    System.out.println(
+        String.format("Launching appliance application master with command: %s", loggedCommand)
+    );
+    amContainer.setCommands(Collections.singletonList(loggedCommand));
+
+    // Setup jars for ApplicationMaster
     {
-      // Set up the container launch context for the application master
-      final ContainerLaunchContext appContainerContext = Records.newRecord(ContainerLaunchContext.class);
-      {
-        final Configuration config = mYarnClient.getConfig();
-
-//        final String loggedCommand = String.format(
-////            "$JAVA_HOME/bin/java %s %s 1>%s/stdout 2>%s/stdout",
-//            "${JAVA_HOME}/bin/java %s %s",
-//            YarnApplianceMaster.YARN_SERVICE_MASTER_JAVA_FLAGS,
-//            YarnApplianceMaster.class.getName()//,
-////            appCommand,
-////            ApplicationConstants.LOG_DIR_EXPANSION_VAR,
-////            ApplicationConstants.LOG_DIR_EXPANSION_VAR
-//        );
-//        final String loggedCommand = String.format(
-//            "${JAVA_HOME}/bin/java %s %s %s %s",
-////            "${JAVA_HOME}/bin/java %s %s %s 1>%s/stdout 2>%s/stderr",
-//            YarnApplianceMaster.YARN_SERVICE_MASTER_JAVA_FLAGS,
-//            DEBUG_FLAGS,
-////            "",""
-//            YarnApplianceMaster.class.getName(),
-//            YarnApplianceMaster.prepareArgs(APPLICATION_MASTER_NAME, appAdminPort, curatorAddress)
-////            ApplicationConstants.LOG_DIR_EXPANSION_VAR,
-////            ApplicationConstants.LOG_DIR_EXPANSION_VAR
-//        );
-        final String loggedCommand = "/bin/date";
-        LOG.info("Launching service application master with command: {}", loggedCommand);
-        appContainerContext.setCommands(Collections.singletonList(loggedCommand));
-
-        // Copy classpath of client.
-        final String classpath = System.getProperty("java.class.path");
-
-        final Map<String, LocalResource> localResources = Maps.newHashMap();
-        final Map<String, String> masterEnvVars = Maps.newHashMap();
-        for (final String classpathEntry : classpath.split(File.pathSeparator)) {
-          if (!classpathEntry.isEmpty()) {
-            final Path entryPath = new Path(classpathEntry);
-            final FileStatus entryFileStatus =
-                FileSystem.getLocal(config).getFileStatus(entryPath);
-//            LOG.info("Adding {}", entryFileStatus);
-            final URL yarnUrlFromPath = ConverterUtils.getYarnUrlFromPath(entryPath);
-            localResources.put(
-                entryPath.getName(),
-                LocalResource.newInstance(
-                    yarnUrlFromPath,
-                    LocalResourceType.FILE,
-                    LocalResourceVisibility.PUBLIC,
-                    entryFileStatus.getLen(),
-                    entryFileStatus.getModificationTime()
-                )
-            );
-            yarnUrlFromPath.setScheme("file");
-            LOG.debug("Adding {}", localResources.get(entryPath.getName()));
-            // TODO: Does this help?
-            Apps.addToEnvironment(
-                masterEnvVars,
-                ApplicationConstants.Environment.CLASSPATH.name(),
-                classpathEntry.trim()
-            );
-          } else {
-            LOG.warn("Blank classpath entry found!");
-          }
-        }
-
-        final String[] yarnConfigClasspath = config.getStrings(
-            YarnConfiguration.YARN_APPLICATION_CLASSPATH,
-            YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH
+      final List<Path> dependencies = managerConfiguration.getDependencies();
+      final HashMap<String, LocalResource> localResources = Maps.newHashMap();
+      for (Path dependency : dependencies) {
+        localResources.put(
+            dependency.getName(),
+            pathToLocalResource(dependency)
         );
-        for (String classpathEntry : yarnConfigClasspath) {
-          Apps.addToEnvironment(
-              masterEnvVars,
-              ApplicationConstants.Environment.CLASSPATH.name(),
-              classpathEntry.trim()
-          );
-        }
-
-        Apps.addToEnvironment(
-            masterEnvVars,
-            ApplicationConstants.Environment.CLASSPATH.name(),
-            ApplicationConstants.Environment.PWD.$() + File.separator + "*"
-        );
-
-        appContainerContext.setLocalResources(localResources);
-        appContainerContext.setEnvironment(masterEnvVars);
-
-        if (UserGroupInformation.isSecurityEnabled()) {
-          final Credentials credentials = new Credentials();
-          final String tokenRenewer = config.get(YarnConfiguration.RM_PRINCIPAL);
-          if (tokenRenewer == null || tokenRenewer.length() == 0) {
-            throw new IOException(
-                "Can't get Master Kerberos principal for the RM to use as renewer");
-          }
-          final FileSystem fs = FileSystem.get(config);
-          // For now, only getting tokens for the default file-system.
-          final Token<?>[] tokens =
-              fs.addDelegationTokens(tokenRenewer, credentials);
-          if (tokens != null) {
-            for (Token<?> token : tokens) {
-              LOG.info("Got dt for " + fs.getUri() + "; " + token);
-            }
-          }
-          final DataOutputBuffer dob = new DataOutputBuffer();
-          credentials.writeTokenStorageToStream(dob);
-          final ByteBuffer fsTokens = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
-          appContainerContext.setTokens(fsTokens);
-        } else {
-          LOG.info("--------> Security is DISABLED");
-        }
-//        appContainerContext.setTokens(ByteBuffer.wrap(WritableUtils.toByteArray(mYarnClient.getAMRMToken(appContext.getApplicationId()))));
       }
-
-      // Finally, set-up ApplicationSubmissionContext for the application
-      appContext.setApplicationName(appName);
-      appContext.setAMContainerSpec(appContainerContext);
-      appContext.setResource(Resource.newInstance(appMemory, appCores));
-      appContext.setQueue(DEFAULT_QUEUE);
+      amContainer.setLocalResources(localResources);
     }
+
+    // Setup CLASSPATH for ApplicationMaster
+    final Map<String, String> appMasterEnv = new HashMap<String, String>();
+    setupAppMasterEnv(appMasterEnv);
+    amContainer.setEnvironment(appMasterEnv);
+
+    // Set up resource type requirements for ApplicationMaster
+    final Resource capability =
+        Resource.newInstance(managerConfiguration.getMemory(), managerConfiguration.getCores());
+
+    // Finally, set-up ApplicationSubmissionContext for the application
+    final ApplicationSubmissionContext appContext = app.getApplicationSubmissionContext();
+    appContext.setApplicationName(managerConfiguration.getName());
+    appContext.setAMContainerSpec(amContainer);
+    appContext.setResource(capability);
+    appContext.setQueue(DEFAULT_QUEUE); // queue
 
     // Submit application
     final ApplicationId appId = appContext.getApplicationId();
     System.out.println("Submitting application " + appId);
     mYarnClient.submitApplication(appContext);
 
+    // Keep track of the running application
     ApplicationReport appReport = mYarnClient.getApplicationReport(appId);
     YarnApplicationState appState = appReport.getYarnApplicationState();
     while (
@@ -214,51 +176,40 @@ public class YarnApplianceManagerFactory implements ApplianceManagerFactory {
             appReport.getFinishTime()
         )
     );
-  }
 
-  private void setupAppMasterEnv(Map<String, String> appMasterEnv) { }
-
-  @Override
-  public ApplianceManager connect(final ApplianceManagerId id) {
     return null;
-  }
-
-  @Override
-  public ApplianceManagerStatus start(
-      final ApplianceManagerConfiguration configuration
-  ) throws IOException, InterruptedException, YarnException {
-    launchApplicationMaster(
-        configuration.getName(),
-        configuration.getMemory(),
-        configuration.getCores(),
-        configuration.getPort(),
-        configuration.getCuratorAddress()
-    );
-
-//    return new YarnApplianceManager(mYarnConf.get())
-    return null;
-  }
-
-  public static void main(final String[] args) throws Exception {
-    final YarnConfiguration baseConfig = new YarnConfiguration();
-    final String appName = "test-yarn-application";
-//    final String appCommand = "echo hello world";
-    final int appMemory = 256;
-    final int appPort = 8080;
-    final int appCores = 1;
-    final String curatorAddress = "localhost:2181";
-
-    final YarnApplianceManagerFactory managerFactory = new YarnApplianceManagerFactory(baseConfig);
-
-    final ApplianceManagerConfiguration managerConfiguration =
-        new ApplianceManagerConfiguration(appName, appMemory, appPort, appCores, curatorAddress, Lists.<Path>newArrayList());
-    final ApplianceManagerStatus managerId = managerFactory.start(managerConfiguration);
-//    final ApplianceManager manager = managerFactory.connect(managerId.getManagerId());
-//    manager.listAppliances();
   }
 
   @Override
   public ApplianceManagerStatus stop(final ApplianceManagerId id) {
-    return null;
+    throw new UnsupportedOperationException(STOP_IS_NOT_CURRENTLY_SUPPORTED_MSG);
+  }
+
+  @Override
+  public void close() throws IOException {
+    // TODO: What if this was never opened/started?
+    mYarnClient.close();
+  }
+
+  // TODO: Move this into a CLI tool.
+  public static void main(String[] args) throws Exception {
+    // TODO: Write this such that it can be connected with a CLI tool
+    // TEMPORARY HARDCODED VALUES
+    final Path jarPath = new Path("hdfs://localhost:8020/user/robert/kiji-appliance-manager-0.1.0-SNAPSHOT.jar");
+
+    // Create a new ApplianceManagerFactory.
+    final YarnApplianceManagerFactory managerFactory = new YarnApplianceManagerFactory(new YarnConfiguration());
+
+    // Start the ApplianceManager.
+    final ApplianceManagerConfiguration managerConfiguration = new ApplianceManagerConfiguration(
+        "appliance-manager-1",
+        256,
+        0,
+        1,
+        "localhost:2181",
+        Lists.newArrayList(jarPath)
+    );
+    System.out.println(String.format("Starting application with configuration: %s", managerConfiguration.toString()));
+    managerFactory.start(managerConfiguration);
   }
 }
