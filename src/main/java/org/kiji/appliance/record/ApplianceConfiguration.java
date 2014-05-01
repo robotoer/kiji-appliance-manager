@@ -1,5 +1,7 @@
 package org.kiji.appliance.record;
 
+import org.kiji.appliance.avro.AvroApplianceConfiguration;
+
 public class ApplianceConfiguration {
   private final ApplianceInstanceConfiguration mInstanceConfiguration;
   private final int mInstanceCount;
@@ -18,5 +20,13 @@ public class ApplianceConfiguration {
 
   public int getInstanceCount() {
     return mInstanceCount;
+  }
+
+  public static ApplianceConfiguration fromAvro(final AvroApplianceConfiguration configuration) {
+    return null;
+  }
+
+  public AvroApplianceConfiguration toAvro() {
+    return null;
   }
 }

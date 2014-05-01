@@ -1,0 +1,9 @@
+// ApplianceInstance API.
+@namespace("org.kiji.appliance.avro")
+protocol AvroApplianceInstance {
+  import idl "ApplianceRecords.avdl";
+
+  AvroApplianceInstanceStatus start();
+  AvroApplianceInstanceStatus stop();
+  AvroApplianceInstanceStatus restart();
+}

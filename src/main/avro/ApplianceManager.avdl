@@ -1,0 +1,11 @@
+// ApplianceManager API.
+@namespace("org.kiji.appliance.avro")
+protocol AvroApplianceManager {
+  import idl "ApplianceRecords.avdl";
+
+  AvroApplianceStatus deploy(AvroApplianceConfiguration configuration);
+  AvroApplianceStatus undeployAppliance(AvroApplianceId id);
+  AvroApplianceInstanceStatus undeployApplianceInstance(AvroApplianceInstanceId id);
+  array<AvroApplianceId> listAppliances();
+  array<AvroApplianceInstanceId> listApplianceInstances(AvroApplianceId id);
+}

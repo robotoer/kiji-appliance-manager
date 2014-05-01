@@ -38,7 +38,7 @@
 
     <curator.version>2.4.1</curator.version>
     <!-- Have to use the 8.x branch for java 6 compatibility. -->
-    <jetty.version>8.1.14.v20131031</jetty.version>
+    <!--<jetty.version>8.1.14.v20131031</jetty.version>-->
     <hadoop.version>2.3.0-cdh5.0.0</hadoop.version>
 
     <junit.version>4.11</junit.version>
@@ -56,6 +56,10 @@
     <dependency>
       <groupId>org.apache.avro</groupId>
       <artifactId>avro</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro-ipc</artifactId>
     </dependency>
 
     <!-- ZooKeeper/Curator Dependencies -->

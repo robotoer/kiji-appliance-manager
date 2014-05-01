@@ -1,9 +1,11 @@
 package org.kiji.appliance.yarn;
 
-import java.util.Collection;
+import java.net.InetAddress;
 import java.util.List;
 
 import com.google.common.base.Objects;
+import org.apache.avro.ipc.HttpServer;
+import org.apache.avro.ipc.specific.SpecificResponder;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -13,7 +15,6 @@ import org.apache.curator.x.discovery.ServiceDiscoveryBuilder;
 import org.apache.curator.x.discovery.ServiceInstance;
 import org.apache.curator.x.discovery.details.InstanceSerializer;
 import org.apache.curator.x.discovery.details.JsonInstanceSerializer;
-import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.client.api.NMClient;
@@ -24,6 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import org.kiji.appliance.Appliance;
 import org.kiji.appliance.ApplianceManager;
+import org.kiji.appliance.avro.AvroApplianceManager;
+import org.kiji.appliance.ipc.AvroApplianceManagerImpl;
 import org.kiji.appliance.record.ApplianceConfiguration;
 import org.kiji.appliance.record.ApplianceId;
 import org.kiji.appliance.record.ApplianceInstanceId;
@@ -46,11 +49,13 @@ public class YarnApplianceMaster implements ApplianceManager {
 
   // Curator connections.
   private final CuratorFramework mCuratorClient;
-  private final InstanceSerializer<ServiceMasterDetails> mJsonSerializer;
-  private final ServiceInstance<ServiceMasterDetails> mThisInstance;
+  private final InstanceSerializer<ApplianceMasterDetails> mJsonSerializer;
+  private final ServiceInstance<ApplianceMasterDetails> mThisInstance;
 
   private final String mMasterAddress;
   private final int mMasterPort;
+  // TODO: Investigate using https://github.com/flurry/avro-mobile/blob/master/avro-java-server/src/com/flurry/avroserver/AvroServer.java instead.
+  private final HttpServer mHttpServer;
 
   public YarnApplianceMaster(
       final String masterId,
@@ -75,29 +80,39 @@ public class YarnApplianceMaster implements ApplianceManager {
       mNodeManagerClient.start();
     }
 
+    // Setup Avro RPC.
+    mHttpServer = new HttpServer(
+        new SpecificResponder(AvroApplianceManager.class, new AvroApplianceManagerImpl(this)),
+        mMasterAddress,
+        mMasterPort
+    );
+    System.out.println(String.format("Setup Avro HTTP server on %s:%s", mMasterAddress, mMasterPort));
+
     // Setup ServiceProvider.
     {
       // Setup a zookeeper connection.
-      mCuratorClient =
-          CuratorFrameworkFactory.newClient(curatorUrl, CURATOR_RETRY_POLICY);
+      mCuratorClient = CuratorFrameworkFactory.newClient(curatorUrl, CURATOR_RETRY_POLICY);
+      mCuratorClient.start();
 
+      final ApplianceMasterDetails masterDetails =
+          new ApplianceMasterDetails(masterAddress, masterPort);
       mThisInstance = ServiceInstance
-          .<ServiceMasterDetails>builder()
+          .<ApplianceMasterDetails>builder()
           .id(masterId)
           .name(CURATOR_SERVICE_NAME)
           .address(masterAddress)
           .port(masterPort)
-          .payload(new ServiceMasterDetails())
+          .payload(masterDetails)
           .build();
 
       mJsonSerializer =
-          new JsonInstanceSerializer<ServiceMasterDetails>(ServiceMasterDetails.class);
+          new JsonInstanceSerializer<ApplianceMasterDetails>(ApplianceMasterDetails.class);
     }
   }
 
-  private ServiceDiscovery<ServiceMasterDetails> getServiceDiscovery() {
+  private ServiceDiscovery<ApplianceMasterDetails> getServiceDiscovery() {
     return ServiceDiscoveryBuilder
-        .builder(ServiceMasterDetails.class)
+        .builder(ApplianceMasterDetails.class)
         .client(mCuratorClient)
         .basePath(BASE_APPLIANCE_DISCOVERY_PATH)
         .serializer(mJsonSerializer)
@@ -112,8 +127,11 @@ public class YarnApplianceMaster implements ApplianceManager {
     mResourceManagerClient.registerApplicationMaster(mMasterAddress, mMasterPort, "");
     System.out.println("Registered YarnApplianceMaster...");
 
+    // Start RPC server.
+    mHttpServer.start();
+
     // Register with Curator's service discovery mechanism.
-    final ServiceDiscovery<ServiceMasterDetails> serviceDiscovery = getServiceDiscovery();
+    final ServiceDiscovery<ApplianceMasterDetails> serviceDiscovery = getServiceDiscovery();
     serviceDiscovery.start();
     try {
       // Does this actually register the application master?
@@ -127,15 +145,23 @@ public class YarnApplianceMaster implements ApplianceManager {
     }
   }
 
+  public void join() throws Exception {
+    mHttpServer.join();
+  }
+
   public void stop() throws Exception {
     // Unregister with Curator's service discovery mechanism.
-    final ServiceDiscovery<ServiceMasterDetails> serviceDiscovery = getServiceDiscovery();
+    final ServiceDiscovery<ApplianceMasterDetails> serviceDiscovery = getServiceDiscovery();
     try {
       serviceDiscovery.start();
       serviceDiscovery.unregisterService(mThisInstance);
     } finally {
       serviceDiscovery.close();
     }
+    mCuratorClient.close();
+
+    // Stop Avro RPC.
+    mHttpServer.close();
 
     // Unregister with ResourceManager.
     System.out.println("Unregistering YarnApplianceMaster...");
@@ -191,7 +217,8 @@ public class YarnApplianceMaster implements ApplianceManager {
   // ApplicationMaster logic
   public static void main(final String[] args) throws Exception {
     final YarnConfiguration yarnConf = new YarnConfiguration();
-    final String masterAddress = NetUtils.getHostname();
+    final String masterAddress = InetAddress.getLocalHost().getHostName();
+//    final String masterAddress = NetUtils.getHostname();
 
     // Parse cli arguments.
     final String masterId = args[0];
@@ -209,12 +236,15 @@ public class YarnApplianceMaster implements ApplianceManager {
 
     System.out.println(String.format("Starting ApplianceMaster: %s", applianceMaster.toString()));
     applianceMaster.start();
-    System.out.println("Sleeping for 10 seconds.");
-    Thread.sleep(30000);
-    System.out.println("Done sleeping for 10 seconds.");
-    System.out.println("Stopping ApplianceMaster...");
-    applianceMaster.stop();
-    System.out.println("Stopped ApplianceMaster.");
+    System.out.println("Started ApplianceMaster.");
+    try {
+      // TODO: Will this actually throw an InterruptedException?
+      applianceMaster.join();
+    } finally {
+      System.out.println("Stopping ApplianceMaster...");
+      applianceMaster.stop();
+      System.out.println("Stopped ApplianceMaster.");
+    }
   }
 
   @Override
@@ -244,7 +274,22 @@ public class YarnApplianceMaster implements ApplianceManager {
     return mMasterPort;
   }
 
-  public static class ServiceMasterDetails {
+  public static class ApplianceMasterDetails {
+    private final String mMasterAddress;
+    private final int mMasterPort;
+
+    public ApplianceMasterDetails(final String masterAddress, final int masterPort) {
+      mMasterAddress = masterAddress;
+      mMasterPort = masterPort;
+    }
+
+    public String getMasterAddress() {
+      return mMasterAddress;
+    }
+
+    public int getMasterPort() {
+      return mMasterPort;
+    }
     // Add some data here (This can't be empty).
   }
 }

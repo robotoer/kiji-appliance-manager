@@ -1,0 +1,52 @@
+@namespace("org.kiji.appliance.avro")
+protocol AvroApplianceRecords {
+  // ApplianceInstance Records.
+  record AvroApplianceInstanceId {
+
+  }
+
+  record AvroApplianceInstanceConfiguration {
+
+  }
+
+  record AvroApplianceInstanceConfiguration {
+
+  }
+
+  record AvroApplianceInstanceStatus {
+
+  }
+
+
+  // Appliance Records.
+  record AvroApplianceId {
+
+  }
+
+  record AvroApplianceConfiguration {
+
+  }
+
+  record AvroApplianceStatus {
+
+  }
+
+
+  // ApplianceManager Records.
+  record AvroApplianceManagerId {
+
+  }
+
+  record AvroApplianceManagerConfiguration {
+    string name;
+    int memory;
+    int port;
+    int cores;
+    string curatorAddress;
+    array<string> dependencies;
+  }
+
+  record AvroApplianceManagerStatus {
+
+  }
+}
