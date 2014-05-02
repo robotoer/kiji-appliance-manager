@@ -7,6 +7,8 @@ import org.kiji.appliance.record.ApplianceConfiguration;
 import org.kiji.appliance.record.ApplianceId;
 import org.kiji.appliance.record.ApplianceInstanceId;
 import org.kiji.appliance.record.ApplianceInstanceStatus;
+import org.kiji.appliance.record.ApplianceManagerId;
+import org.kiji.appliance.record.ApplianceManagerStatus;
 import org.kiji.appliance.record.ApplianceStatus;
 
 /**
@@ -15,9 +17,15 @@ import org.kiji.appliance.record.ApplianceStatus;
 public interface ApplianceManager {
   Appliance connect(final ApplianceId id);
 
+  ApplianceManagerId getId();
+
   ApplianceStatus deploy(final ApplianceConfiguration configuration) throws IOException;
   ApplianceStatus undeployAppliance(final ApplianceId id) throws IOException;
   ApplianceInstanceStatus undeployApplianceInstance(final ApplianceInstanceId id) throws IOException;
+
+  ApplianceManagerStatus getStatus();
+  ApplianceStatus getApplianceStatus(final ApplianceId id);
+  ApplianceInstanceStatus getApplianceInstanceStatus(final ApplianceInstanceId id);
 
   List<ApplianceId> listAppliances() throws IOException;
   List<ApplianceInstanceId> listApplianceInstances(final ApplianceId appliance) throws IOException;

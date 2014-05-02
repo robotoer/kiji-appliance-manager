@@ -2,7 +2,13 @@ package org.kiji.appliance.record;
 
 import java.util.List;
 
+import javax.annotation.Nullable;
+
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import org.apache.hadoop.fs.Path;
+
+import org.kiji.appliance.avro.AvroApplianceManagerConfiguration;
 
 public class ApplianceManagerConfiguration {
   private final String mName;
@@ -50,5 +56,28 @@ public class ApplianceManagerConfiguration {
 
   public List<Path> getDependencies() {
     return mDependencies;
+  }
+
+  public static ApplianceManagerConfiguration fromAvro(
+      final AvroApplianceManagerConfiguration configuration
+  ) {
+    final List<Path> dependencies = Lists.transform(
+        configuration.getDependencies(),
+        new Function<String, Path>() {
+          @Nullable
+          @Override
+          public Path apply(@Nullable final String input) {
+            return new Path(input);
+          }
+        }
+    );
+    return new ApplianceManagerConfiguration(
+        configuration.getName(),
+        configuration.getMemory(),
+        configuration.getPort(),
+        configuration.getCores(),
+        configuration.getCuratorAddress(),
+        dependencies
+    );
   }
 }

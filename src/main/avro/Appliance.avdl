@@ -1,9 +1,0 @@
-// Appliance API.
-@namespace("org.kiji.appliance.avro")
-protocol AvroAppliance {
-  import idl "ApplianceRecords.avdl";
-
-  AvroApplianceStatus start();
-  AvroApplianceStatus stop();
-  AvroApplianceStatus update(AvroApplianceConfiguration configuration);
-}

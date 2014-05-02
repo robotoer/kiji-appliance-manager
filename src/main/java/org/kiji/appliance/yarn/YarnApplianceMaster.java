@@ -26,12 +26,17 @@ import org.slf4j.LoggerFactory;
 import org.kiji.appliance.Appliance;
 import org.kiji.appliance.ApplianceManager;
 import org.kiji.appliance.avro.AvroApplianceManager;
+import org.kiji.appliance.avro.AvroApplianceManagerConfiguration;
 import org.kiji.appliance.ipc.AvroApplianceManagerImpl;
 import org.kiji.appliance.record.ApplianceConfiguration;
 import org.kiji.appliance.record.ApplianceId;
 import org.kiji.appliance.record.ApplianceInstanceId;
 import org.kiji.appliance.record.ApplianceInstanceStatus;
+import org.kiji.appliance.record.ApplianceManagerConfiguration;
+import org.kiji.appliance.record.ApplianceManagerId;
+import org.kiji.appliance.record.ApplianceManagerStatus;
 import org.kiji.appliance.record.ApplianceStatus;
+import org.kiji.appliance.util.AvroUtils;
 
 public class YarnApplianceMaster implements ApplianceManager {
 //  public static final String YARN_APPLIANCE_MASTER_JAVA_FLAGS = "-Xmx256M -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=1337";
@@ -52,20 +57,20 @@ public class YarnApplianceMaster implements ApplianceManager {
   private final InstanceSerializer<ApplianceMasterDetails> mJsonSerializer;
   private final ServiceInstance<ApplianceMasterDetails> mThisInstance;
 
-  private final String mMasterAddress;
-  private final int mMasterPort;
-  // TODO: Investigate using https://github.com/flurry/avro-mobile/blob/master/avro-java-server/src/com/flurry/avroserver/AvroServer.java instead.
+  // Avro RPC server.
   private final HttpServer mHttpServer;
 
+  private final ApplianceManagerConfiguration mMasterConfiguration;
+  private final String mMasterAddress;
+  // TODO: Investigate using https://github.com/flurry/avro-mobile/blob/master/avro-java-server/src/com/flurry/avroserver/AvroServer.java instead.
+
   public YarnApplianceMaster(
-      final String masterId,
       final String masterAddress,
-      final int masterPort,
-      final String curatorUrl,
+      final ApplianceManagerConfiguration masterConfiguration,
       final YarnConfiguration yarnConf
   ) throws Exception {
     mMasterAddress = masterAddress;
-    mMasterPort = masterPort;
+    mMasterConfiguration = masterConfiguration;
     // Setup Yarn.
     {
       // Initialize ResourceManager and NodeManager. AMRMClientAsync is used here because it runs a
@@ -84,24 +89,24 @@ public class YarnApplianceMaster implements ApplianceManager {
     mHttpServer = new HttpServer(
         new SpecificResponder(AvroApplianceManager.class, new AvroApplianceManagerImpl(this)),
         mMasterAddress,
-        mMasterPort
+        mMasterConfiguration.getPort()
     );
-    System.out.println(String.format("Setup Avro HTTP server on %s:%s", mMasterAddress, mMasterPort));
+    System.out.println(String.format("Setup Avro HTTP server on %s:%s", mMasterAddress, masterConfiguration.getPort()));
 
     // Setup ServiceProvider.
     {
       // Setup a zookeeper connection.
-      mCuratorClient = CuratorFrameworkFactory.newClient(curatorUrl, CURATOR_RETRY_POLICY);
+      mCuratorClient = CuratorFrameworkFactory.newClient(masterConfiguration.getCuratorAddress(), CURATOR_RETRY_POLICY);
       mCuratorClient.start();
 
       final ApplianceMasterDetails masterDetails =
-          new ApplianceMasterDetails(masterAddress, masterPort);
+          new ApplianceMasterDetails(masterAddress, masterConfiguration.getPort());
       mThisInstance = ServiceInstance
           .<ApplianceMasterDetails>builder()
-          .id(masterId)
+          .id(masterConfiguration.getName())
           .name(CURATOR_SERVICE_NAME)
           .address(masterAddress)
-          .port(masterPort)
+          .port(masterConfiguration.getPort())
           .payload(masterDetails)
           .build();
 
@@ -124,7 +129,7 @@ public class YarnApplianceMaster implements ApplianceManager {
     // Register with ResourceManager.
     // TODO: Are these supposed to not be blank values?
     System.out.println("Registering YarnApplianceMaster...");
-    mResourceManagerClient.registerApplicationMaster(mMasterAddress, mMasterPort, "");
+    mResourceManagerClient.registerApplicationMaster(mMasterAddress, mMasterConfiguration.getPort(), "");
     System.out.println("Registered YarnApplianceMaster...");
 
     // Start RPC server.
@@ -170,6 +175,12 @@ public class YarnApplianceMaster implements ApplianceManager {
 
   @Override
   public Appliance connect(final ApplianceId id) {
+    // TODO: Implement this!
+    return null;
+  }
+
+  @Override
+  public ApplianceManagerId getId() {
     return null;
   }
 
@@ -177,6 +188,7 @@ public class YarnApplianceMaster implements ApplianceManager {
   public ApplianceStatus deploy(
       final ApplianceConfiguration configuration
   ) {
+    // TODO: Implement this!
     // Allocate new resource containers to execute the service.
     System.out.println("Received a deploy call!");
     return null;
@@ -184,6 +196,7 @@ public class YarnApplianceMaster implements ApplianceManager {
 
   @Override
   public ApplianceStatus undeployAppliance(final ApplianceId id) {
+    // TODO: Implement this!
     // Get a handle to the required resource containers to kill their corresponding service.
     System.out.println("Received an undeploy call!");
     return null;
@@ -191,13 +204,30 @@ public class YarnApplianceMaster implements ApplianceManager {
 
   @Override
   public ApplianceInstanceStatus undeployApplianceInstance(final ApplianceInstanceId id) {
+    // TODO: Implement this!
     // Get a handle to the required resource containers to kill their corresponding service instance.
     System.out.println("Received an undeploy call!");
     return null;
   }
 
   @Override
+  public ApplianceManagerStatus getStatus() {
+    return null;
+  }
+
+  @Override
+  public ApplianceStatus getApplianceStatus(final ApplianceId id) {
+    return null;
+  }
+
+  @Override
+  public ApplianceInstanceStatus getApplianceInstanceStatus(final ApplianceInstanceId id) {
+    return null;
+  }
+
+  @Override
   public List<ApplianceInstanceId> listApplianceInstances(final ApplianceId appliance) {
+    // TODO: Implement this!
     // Dump:
     //  - Services that the ApplianceManager is aware of.
     //  - Actual getStatus of the corresponding resource containers.
@@ -207,6 +237,7 @@ public class YarnApplianceMaster implements ApplianceManager {
 
   @Override
   public List<ApplianceId> listAppliances() {
+    // TODO: Implement this!
     // Dump:
     //  - Instances that the Service is composed of.
     //  - Actual getStatus of the corresponding service instances.
@@ -221,15 +252,17 @@ public class YarnApplianceMaster implements ApplianceManager {
 //    final String masterAddress = NetUtils.getHostname();
 
     // Parse cli arguments.
-    final String masterId = args[0];
-    final int masterPort = Integer.parseInt(args[1]);
-    final String curatorAddress = args[2];
+    final String rawManagerConfiguration = args[0];
+    final ApplianceManagerConfiguration managerConfiguration = ApplianceManagerConfiguration.fromAvro(
+        AvroUtils.<AvroApplianceManagerConfiguration>fromAvroJsonString(
+            rawManagerConfiguration,
+            AvroApplianceManagerConfiguration.getClassSchema()
+        )
+    );
 
     final YarnApplianceMaster applianceMaster = new YarnApplianceMaster(
-        masterId,
         masterAddress,
-        masterPort,
-        curatorAddress,
+        managerConfiguration,
         yarnConf
     );
     LOG.info("Starting {}...", applianceMaster.toString());
@@ -270,8 +303,8 @@ public class YarnApplianceMaster implements ApplianceManager {
     return mMasterAddress;
   }
 
-  public int getMasterPort() {
-    return mMasterPort;
+  public ApplianceManagerConfiguration getMasterConfiguration() {
+    return mMasterConfiguration;
   }
 
   public static class ApplianceMasterDetails {
@@ -290,6 +323,5 @@ public class YarnApplianceMaster implements ApplianceManager {
     public int getMasterPort() {
       return mMasterPort;
     }
-    // Add some data here (This can't be empty).
   }
 }

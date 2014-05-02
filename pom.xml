@@ -147,6 +147,13 @@
       <plugin>
         <groupId>org.apache.avro</groupId>
         <artifactId>avro-maven-plugin</artifactId>
+        <configuration>
+          <!-- Record fields are now private : use accessors always. -->
+          <fieldVisibility>private</fieldVisibility>
+
+          <!-- Avro string compiled to java.lang.String instead of CharSequence -->
+          <stringType>String</stringType>
+        </configuration>
       </plugin>
     </plugins>
   </build>

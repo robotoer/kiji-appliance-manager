@@ -1,11 +1,65 @@
 // ApplianceManager API.
 @namespace("org.kiji.appliance.avro")
 protocol AvroApplianceManager {
-  import idl "ApplianceRecords.avdl";
+  // ApplianceInstance Records.
+  record AvroApplianceInstanceId {
+
+  }
+
+  record AvroApplianceInstanceConfiguration {
+
+  }
+
+  record AvroApplianceInstanceConfiguration {
+
+  }
+
+  record AvroApplianceInstanceStatus {
+
+  }
+
+
+  // Appliance Records.
+  record AvroApplianceId {
+
+  }
+
+  record AvroApplianceConfiguration {
+
+  }
+
+  record AvroApplianceStatus {
+
+  }
+
+
+  // ApplianceManager Records.
+  record AvroApplianceManagerId {
+
+  }
+
+  record AvroApplianceManagerConfiguration {
+    string name;
+    int memory;
+    int port;
+    int cores;
+    string curatorAddress;
+    array<string> dependencies;
+  }
+
+  record AvroApplianceManagerStatus {
+
+  }
+
 
   AvroApplianceStatus deploy(AvroApplianceConfiguration configuration);
   AvroApplianceStatus undeployAppliance(AvroApplianceId id);
   AvroApplianceInstanceStatus undeployApplianceInstance(AvroApplianceInstanceId id);
+
+  AvroApplianceManagerStatus getStatus();
+  AvroApplianceStatus getApplianceStatus(AvroApplianceId id);
+  AvroApplianceInstanceStatus getApplianceInstanceStatus(AvroApplianceInstanceId id);
+
   array<AvroApplianceId> listAppliances();
   array<AvroApplianceInstanceId> listApplianceInstances(AvroApplianceId id);
 }

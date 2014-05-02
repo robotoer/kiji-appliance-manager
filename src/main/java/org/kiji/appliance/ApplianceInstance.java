@@ -13,11 +13,4 @@ public interface ApplianceInstance {
   ApplianceId getApplianceId();
   ApplianceInstanceConfiguration getConfiguration();
   ApplianceInstanceStatus getStatus();
-
-  // Commands
-  ApplianceInstanceStatus start();
-  ApplianceInstanceStatus stop();
-
-  // Nice-to-have.
-  ApplianceInstanceStatus restart();
 }

@@ -14,6 +14,7 @@ import org.kiji.appliance.avro.AvroApplianceId;
 import org.kiji.appliance.avro.AvroApplianceInstanceId;
 import org.kiji.appliance.avro.AvroApplianceInstanceStatus;
 import org.kiji.appliance.avro.AvroApplianceManager;
+import org.kiji.appliance.avro.AvroApplianceManagerStatus;
 import org.kiji.appliance.avro.AvroApplianceStatus;
 import org.kiji.appliance.record.ApplianceConfiguration;
 import org.kiji.appliance.record.ApplianceId;
@@ -51,6 +52,21 @@ public class AvroApplianceManagerImpl implements AvroApplianceManager {
     } catch (IOException ioe) {
       throw new AvroRemoteException(ioe);
     }
+  }
+
+  @Override
+  public AvroApplianceManagerStatus getStatus() throws AvroRemoteException {
+    return null;
+  }
+
+  @Override
+  public AvroApplianceStatus getApplianceStatus(final AvroApplianceId id) throws AvroRemoteException {
+    return null;
+  }
+
+  @Override
+  public AvroApplianceInstanceStatus getApplianceInstanceStatus(final AvroApplianceInstanceId id) throws AvroRemoteException {
+    return null;
   }
 
   @Override
