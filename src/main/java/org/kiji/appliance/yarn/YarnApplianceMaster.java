@@ -23,7 +23,6 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.kiji.appliance.Appliance;
 import org.kiji.appliance.ApplianceManager;
 import org.kiji.appliance.avro.AvroApplianceManager;
 import org.kiji.appliance.avro.AvroApplianceManagerConfiguration;
@@ -39,8 +38,14 @@ import org.kiji.appliance.record.ApplianceStatus;
 import org.kiji.appliance.util.AvroUtils;
 
 public class YarnApplianceMaster implements ApplianceManager {
+  // Exception messages.
+  public static final String MANAGER_NOT_RUNNING_MSG = "";
+  public static final String NONEXISTENT_APPLIANCE_ID_MSG = "";
+  public static final String NONEXISTENT_APPLIANCE_INSTANCE_ID_MSG = "";
+
 //  public static final String YARN_APPLIANCE_MASTER_JAVA_FLAGS = "-Xmx256M -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=1337";
   public static final String YARN_APPLIANCE_MASTER_JAVA_FLAGS = "-Xmx256M";
+
   private static final Logger LOG = LoggerFactory.getLogger(YarnApplianceMaster.class);
 
   public static final String BASE_APPLIANCE_DISCOVERY_PATH = "/org/kiji/appliances";
@@ -171,12 +176,6 @@ public class YarnApplianceMaster implements ApplianceManager {
     // Unregister with ResourceManager.
     System.out.println("Unregistering YarnApplianceMaster...");
     mResourceManagerClient.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED, "", "");
-  }
-
-  @Override
-  public Appliance connect(final ApplianceId id) {
-    // TODO: Implement this!
-    return null;
   }
 
   @Override

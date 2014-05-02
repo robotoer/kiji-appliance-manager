@@ -5,6 +5,7 @@ import org.kiji.appliance.avro.AvroApplianceConfiguration;
 public class ApplianceConfiguration {
   private final ApplianceInstanceConfiguration mInstanceConfiguration;
   private final int mInstanceCount;
+  private String mName;
 
   public ApplianceConfiguration(
       final ApplianceInstanceConfiguration instanceConfiguration,
@@ -28,5 +29,9 @@ public class ApplianceConfiguration {
 
   public AvroApplianceConfiguration toAvro() {
     return null;
+  }
+
+  public String getName() {
+    return mName;
   }
 }

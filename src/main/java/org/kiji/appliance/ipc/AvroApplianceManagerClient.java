@@ -11,7 +11,6 @@ import com.google.common.collect.Lists;
 import org.apache.avro.ipc.HttpTransceiver;
 import org.apache.avro.ipc.specific.SpecificRequestor;
 
-import org.kiji.appliance.Appliance;
 import org.kiji.appliance.ApplianceManager;
 import org.kiji.appliance.avro.AvroApplianceId;
 import org.kiji.appliance.avro.AvroApplianceInstanceId;
@@ -31,11 +30,6 @@ public class AvroApplianceManagerClient implements ApplianceManager, Closeable {
   public AvroApplianceManagerClient(final URL rpcUrl) throws IOException {
     mHttpTransceiver = new HttpTransceiver(rpcUrl);
     mProxy = SpecificRequestor.getClient(AvroApplianceManager.class, mHttpTransceiver);
-  }
-
-  @Override
-  public Appliance connect(final ApplianceId id) {
-    return null;
   }
 
   @Override

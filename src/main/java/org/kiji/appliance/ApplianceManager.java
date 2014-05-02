@@ -15,8 +15,6 @@ import org.kiji.appliance.record.ApplianceStatus;
  * The service manager is responsible for coordinating the deployment/undeployment of services.
  */
 public interface ApplianceManager {
-  Appliance connect(final ApplianceId id);
-
   ApplianceManagerId getId();
 
   ApplianceStatus deploy(final ApplianceConfiguration configuration) throws IOException;
