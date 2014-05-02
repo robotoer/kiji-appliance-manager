@@ -20,6 +20,8 @@ import org.kiji.appliance.record.ApplianceConfiguration;
 import org.kiji.appliance.record.ApplianceId;
 import org.kiji.appliance.record.ApplianceInstanceId;
 import org.kiji.appliance.record.ApplianceInstanceStatus;
+import org.kiji.appliance.record.ApplianceManagerId;
+import org.kiji.appliance.record.ApplianceManagerStatus;
 import org.kiji.appliance.record.ApplianceStatus;
 
 public class AvroApplianceManagerClient implements ApplianceManager, Closeable {
@@ -37,6 +39,11 @@ public class AvroApplianceManagerClient implements ApplianceManager, Closeable {
   }
 
   @Override
+  public ApplianceManagerId getId() {
+    return null;
+  }
+
+  @Override
   public ApplianceStatus deploy(final ApplianceConfiguration configuration) throws IOException {
     return ApplianceStatus.fromAvro(mProxy.deploy(configuration.toAvro()));
   }
@@ -49,6 +56,21 @@ public class AvroApplianceManagerClient implements ApplianceManager, Closeable {
   @Override
   public ApplianceInstanceStatus undeployApplianceInstance(final ApplianceInstanceId id) throws IOException {
     return ApplianceInstanceStatus.fromAvro(mProxy.undeployApplianceInstance(id.toAvro()));
+  }
+
+  @Override
+  public ApplianceManagerStatus getStatus() {
+    return null;
+  }
+
+  @Override
+  public ApplianceStatus getApplianceStatus(ApplianceId id) {
+    return null;
+  }
+
+  @Override
+  public ApplianceInstanceStatus getApplianceInstanceStatus(ApplianceInstanceId id) {
+    return null;
   }
 
   @Override
