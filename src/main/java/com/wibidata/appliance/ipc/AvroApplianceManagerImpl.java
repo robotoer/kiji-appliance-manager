@@ -47,7 +47,9 @@ public class AvroApplianceManagerImpl implements AvroApplianceManager {
   }
 
   @Override
-  public AvroApplianceStatus deploy(final AvroApplianceConfiguration configuration) throws AvroRemoteException {
+  public AvroApplianceStatus deploy(
+      final AvroApplianceConfiguration configuration
+  ) throws AvroRemoteException {
     try {
       return mApplianceManager.deploy(ApplianceConfiguration.fromAvro(configuration)).toAvro();
     } catch (IOException ioe) {

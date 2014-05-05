@@ -58,8 +58,10 @@ import com.wibidata.appliance.record.ApplianceManagerId;
 import com.wibidata.appliance.record.ApplianceManagerStatus;
 
 public class YarnApplianceManagerFactory implements ApplianceManagerFactory, Closeable {
-  public static final String CONNECT_IS_NOT_CURRENTLY_SUPPORTED_MSG = "Connect is not currently supported.";
-  public static final String STOP_IS_NOT_CURRENTLY_SUPPORTED_MSG = "Stop is not currently supported";
+  public static final String CONNECT_IS_NOT_CURRENTLY_SUPPORTED_MSG =
+      "Connect is not currently supported.";
+  public static final String STOP_IS_NOT_CURRENTLY_SUPPORTED_MSG =
+      "Stop is not currently supported";
 
   public static final String DEFAULT_QUEUE = "default";
 
@@ -80,7 +82,8 @@ public class YarnApplianceManagerFactory implements ApplianceManagerFactory, Clo
   private LocalResource pathToLocalResource(
       final Path resourcePath
   ) throws IOException {
-    final FileStatus resourceStat = FileSystem.get(mYarnClient.getConfig()).getFileStatus(resourcePath);
+    final FileStatus resourceStat =
+        FileSystem.get(mYarnClient.getConfig()).getFileStatus(resourcePath);
     Preconditions.checkArgument(resourceStat.isFile());
 
     final LocalResource appMasterJar = Records.newRecord(LocalResource.class);

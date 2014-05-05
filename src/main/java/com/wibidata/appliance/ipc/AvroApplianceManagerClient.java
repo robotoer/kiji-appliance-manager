@@ -67,7 +67,9 @@ public class AvroApplianceManagerClient implements ApplianceManager, Closeable {
   }
 
   @Override
-  public ApplianceInstanceStatus undeployApplianceInstance(final ApplianceInstanceId id) throws IOException {
+  public ApplianceInstanceStatus undeployApplianceInstance(
+      final ApplianceInstanceId id
+  ) throws IOException {
     return ApplianceInstanceStatus.fromAvro(mProxy.undeployApplianceInstance(id.toAvro()));
   }
 
@@ -101,7 +103,9 @@ public class AvroApplianceManagerClient implements ApplianceManager, Closeable {
   }
 
   @Override
-  public List<ApplianceInstanceId> listApplianceInstances(final ApplianceId appliance) throws IOException {
+  public List<ApplianceInstanceId> listApplianceInstances(
+      final ApplianceId appliance
+  ) throws IOException {
     return Lists.transform(
         mProxy.listApplianceInstances(appliance.toAvro()),
         new Function<AvroApplianceInstanceId, ApplianceInstanceId>() {

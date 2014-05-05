@@ -63,7 +63,6 @@ public class YarnApplianceMaster implements ApplianceManager {
   public static final String NONEXISTENT_APPLIANCE_INSTANCE_ID_MSG = "";
   public static final String DUPLICATE_APPLIANCE_NAME_MSG = "";
 
-//  public static final String YARN_APPLIANCE_MASTER_JAVA_FLAGS = "-Xmx256M -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=1337";
   public static final String YARN_APPLIANCE_MASTER_JAVA_FLAGS = "-Xmx256M";
 
   private static final Logger LOG = LoggerFactory.getLogger(YarnApplianceMaster.class);
@@ -87,7 +86,8 @@ public class YarnApplianceMaster implements ApplianceManager {
 
   private final ApplianceManagerConfiguration mMasterConfiguration;
   private final String mMasterAddress;
-  // TODO: Investigate using https://github.com/flurry/avro-mobile/blob/master/avro-java-server/src/com/flurry/avroserver/AvroServer.java instead.
+  // TODO: Investigate using https://github.com/flurry/avro-mobile/blob/master/avro-java-server/src
+  //     /com/flurry/avroserver/AvroServer.java instead.
 
   public YarnApplianceMaster(
       final String masterAddress,
@@ -100,7 +100,8 @@ public class YarnApplianceMaster implements ApplianceManager {
     {
       // Initialize ResourceManager and NodeManager. AMRMClientAsync is used here because it runs a
       // heartbeat thread.
-      mResourceManagerClient = AMRMClientAsync.createAMRMClientAsync(YARN_HEARTBEAT_INTERVAL_MS, null);
+      mResourceManagerClient =
+          AMRMClientAsync.createAMRMClientAsync(YARN_HEARTBEAT_INTERVAL_MS, null);
       mResourceManagerClient.init(yarnConf);
       mResourceManagerClient.start();
 
@@ -116,12 +117,22 @@ public class YarnApplianceMaster implements ApplianceManager {
         mMasterAddress,
         mMasterConfiguration.getPort()
     );
-    System.out.println(String.format("Setup Avro HTTP server on %s:%s", mMasterAddress, masterConfiguration.getPort()));
+    System.out.println(
+        String.format(
+            "Setup Avro HTTP server on %s:%s",
+            mMasterAddress,
+            masterConfiguration.getPort()
+        )
+    );
 
     // Setup ServiceProvider.
     {
       // Setup a zookeeper connection.
-      mCuratorClient = CuratorFrameworkFactory.newClient(masterConfiguration.getCuratorAddress(), CURATOR_RETRY_POLICY);
+      mCuratorClient =
+          CuratorFrameworkFactory.newClient(
+              masterConfiguration.getCuratorAddress(),
+              CURATOR_RETRY_POLICY
+          );
       mCuratorClient.start();
 
       final ApplianceMasterDetails masterDetails =
@@ -154,7 +165,11 @@ public class YarnApplianceMaster implements ApplianceManager {
     // Register with ResourceManager.
     // TODO: Are these supposed to not be blank values?
     System.out.println("Registering YarnApplianceMaster...");
-    mResourceManagerClient.registerApplicationMaster(mMasterAddress, mMasterConfiguration.getPort(), "");
+    mResourceManagerClient.registerApplicationMaster(
+        mMasterAddress,
+        mMasterConfiguration.getPort(),
+        ""
+    );
     System.out.println("Registered YarnApplianceMaster...");
 
     // Start RPC server.
@@ -224,7 +239,8 @@ public class YarnApplianceMaster implements ApplianceManager {
   @Override
   public ApplianceInstanceStatus undeployApplianceInstance(final ApplianceInstanceId id) {
     // TODO: Implement this!
-    // Get a handle to the required resource containers to kill their corresponding service instance.
+    // Get a handle to the required resource containers to kill their corresponding service
+    // instance.
     System.out.println("Received an undeploy call!");
     return null;
   }
@@ -272,18 +288,20 @@ public class YarnApplianceMaster implements ApplianceManager {
 
     // Parse cli arguments.
     final String rawManagerConfiguration = args[0];
-    final ApplianceManagerConfiguration managerConfiguration = ApplianceManagerConfiguration.fromAvro(
-        AvroUtils.<AvroApplianceManagerConfiguration>fromAvroJsonString(
-            rawManagerConfiguration,
-            AvroApplianceManagerConfiguration.getClassSchema()
-        )
-    );
+    final ApplianceManagerConfiguration managerConfiguration =
+        ApplianceManagerConfiguration.fromAvro(
+            AvroUtils.<AvroApplianceManagerConfiguration>fromAvroJsonString(
+                rawManagerConfiguration,
+                AvroApplianceManagerConfiguration.getClassSchema()
+            )
+        );
 
-    final YarnApplianceMaster applianceMaster = new YarnApplianceMaster(
-        masterAddress,
-        managerConfiguration,
-        yarnConf
-    );
+    final YarnApplianceMaster applianceMaster =
+        new YarnApplianceMaster(
+            masterAddress,
+            managerConfiguration,
+            yarnConf
+        );
     LOG.info("Starting {}...", applianceMaster.toString());
 
     System.out.println(String.format("Starting ApplianceMaster: %s", applianceMaster.toString()));
