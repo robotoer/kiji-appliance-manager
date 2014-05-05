@@ -19,9 +19,9 @@
 
 package com.wibidata.appliance.ipc;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
+import javax.annotation.Nullable;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
