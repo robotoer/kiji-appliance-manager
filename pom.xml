@@ -20,8 +20,8 @@
   -->
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.kiji.appliance</groupId>
-  <artifactId>kiji-appliance-manager</artifactId>
+  <groupId>com.wibidata.appliance</groupId>
+  <artifactId>wibi-appliance-manager</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
@@ -146,10 +146,10 @@
         <artifactId>maven-surefire-plugin</artifactId>
       </plugin>
 
-      <!--<plugin>-->
-        <!--<groupId>org.apache.maven.plugins</groupId>-->
-        <!--<artifactId>maven-javadoc-plugin</artifactId>-->
-      <!--</plugin>-->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -176,9 +176,9 @@
     </repository>
   </repositories>
 
-  <!-- <scm> -->
-  <!--   <connection>scm:git:git@github.com:kijiproject/kiji-scoring-server.git</connection> -->
-  <!--   <url>scm:git:git@github.com:kijiproject/kiji-scoring-server.git</url> -->
-  <!--   <developerConnection>scm:git:git@github.com:kijiproject/kiji-scoring-server.git</developerConnection> -->
-  <!-- </scm> -->
+   <scm>
+     <connection>scm:git:git@github.com:wibidata/wibi-appliance-manager.git</connection>
+     <url>scm:git:git@github.com:wibidata/wibi-appliance-manager.git</url>
+     <developerConnection>scm:git:git@github.com:wibidata/wibi-appliance-manager.git</developerConnection>
+   </scm>
 </project>

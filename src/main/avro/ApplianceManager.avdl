@@ -1,5 +1,5 @@
 // ApplianceManager API.
-@namespace("org.kiji.appliance.avro")
+@namespace("com.wibidata.appliance.avro")
 protocol AvroApplianceManager {
   // ApplianceInstance Records.
   record AvroApplianceInstanceId {
