@@ -25,7 +25,8 @@ public class ApplianceManagerConfiguration {
       final int port,
       final int cores,
       final String curatorAddress,
-      final List<Path> dependencies) {
+      final List<Path> dependencies
+  ) {
     mName = name;
     mMemory = memory;
     mPort = port;

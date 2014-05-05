@@ -19,6 +19,7 @@ public interface ApplianceManager {
 
   ApplianceStatus deploy(final ApplianceConfiguration configuration) throws IOException;
   ApplianceStatus undeployAppliance(final ApplianceId id) throws IOException;
+  // TODO: Should this exist? Makes the api unsymmetric.
   ApplianceInstanceStatus undeployApplianceInstance(final ApplianceInstanceId id) throws IOException;
 
   ApplianceManagerStatus getStatus();

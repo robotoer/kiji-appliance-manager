@@ -42,6 +42,7 @@ public class YarnApplianceMaster implements ApplianceManager {
   public static final String MANAGER_NOT_RUNNING_MSG = "";
   public static final String NONEXISTENT_APPLIANCE_ID_MSG = "";
   public static final String NONEXISTENT_APPLIANCE_INSTANCE_ID_MSG = "";
+  public static final String DUPLICATE_APPLIANCE_NAME_MSG = "";
 
 //  public static final String YARN_APPLIANCE_MASTER_JAVA_FLAGS = "-Xmx256M -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=1337";
   public static final String YARN_APPLIANCE_MASTER_JAVA_FLAGS = "-Xmx256M";
