@@ -34,7 +34,8 @@ import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
 
 public class AvroUtils {
-  private AvroUtils() { }
+  private AvroUtils() {
+  }
 
   /**
    * Standard Avro/JSON encoder.
@@ -43,7 +44,7 @@ public class AvroUtils {
    * @return JSON-encoded value.
    * @throws IOException on error.
    */
-  @SuppressWarnings({ "rawtypes", "unchecked" })
+  @SuppressWarnings({"rawtypes", "unchecked"})
   public static String toAvroJsonString(
       final IndexedRecord record
   ) throws IOException {

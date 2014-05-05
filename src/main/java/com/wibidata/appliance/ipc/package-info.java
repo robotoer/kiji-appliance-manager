@@ -21,4 +21,5 @@
  * Contains classes for remotely accessing the ApplianceManager APIs. The ApplianceManager uses
  * Avro's IPC mechanisms to do this.
  */
+
 package com.wibidata.appliance.ipc;

@@ -34,16 +34,16 @@ public class ApplianceConfiguration {
     mInstanceCount = instanceCount;
   }
 
+  public static ApplianceConfiguration fromAvro(final AvroApplianceConfiguration configuration) {
+    return null;
+  }
+
   public ApplianceInstanceConfiguration getInstanceConfiguration() {
     return mInstanceConfiguration;
   }
 
   public int getInstanceCount() {
     return mInstanceCount;
-  }
-
-  public static ApplianceConfiguration fromAvro(final AvroApplianceConfiguration configuration) {
-    return null;
   }
 
   public AvroApplianceConfiguration toAvro() {

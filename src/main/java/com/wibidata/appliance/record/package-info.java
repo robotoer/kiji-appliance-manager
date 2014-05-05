@@ -21,4 +21,5 @@
  * Contains raw/pure data records for configuring and identifying ApplianceManager components. These
  * records are backed by avro records.
  */
+
 package com.wibidata.appliance.record;

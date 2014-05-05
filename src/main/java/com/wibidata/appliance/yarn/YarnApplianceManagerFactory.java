@@ -73,44 +73,6 @@ public class YarnApplianceManagerFactory implements ApplianceManagerFactory, Clo
     mYarnClient.start();
   }
 
-  /**
-   * Creates a local resource definition for a path referring to a file on HDFS.
-   *
-   * @param resourcePath to a file on HDFS.
-   * @return a local resource for an appliance.
-   */
-  private LocalResource pathToLocalResource(
-      final Path resourcePath
-  ) throws IOException {
-    final FileStatus resourceStat =
-        FileSystem.get(mYarnClient.getConfig()).getFileStatus(resourcePath);
-    Preconditions.checkArgument(resourceStat.isFile());
-
-    final LocalResource appMasterJar = Records.newRecord(LocalResource.class);
-    appMasterJar.setResource(ConverterUtils.getYarnUrlFromPath(resourcePath));
-    appMasterJar.setSize(resourceStat.getLen());
-    appMasterJar.setTimestamp(resourceStat.getModificationTime());
-    appMasterJar.setType(LocalResourceType.FILE);
-    appMasterJar.setVisibility(LocalResourceVisibility.PUBLIC);
-
-    return appMasterJar;
-  }
-
-  private void setupAppMasterEnv(
-      final Map<String, String> appMasterEnv
-  ) {
-    for (String c : mYarnClient.getConfig().getStrings(
-        YarnConfiguration.YARN_APPLICATION_CLASSPATH,
-        YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH)) {
-      Apps.addToEnvironment(appMasterEnv, Environment.CLASSPATH.name(),
-          c.trim());
-    }
-    Apps.addToEnvironment(appMasterEnv,
-        Environment.CLASSPATH.name(),
-        Environment.PWD.$() + File.separator + "*"
-    );
-  }
-
   @Override
   public ApplianceManager connect(final ApplianceManagerId id) {
     throw new UnsupportedOperationException(CONNECT_IS_NOT_CURRENTLY_SUPPORTED_MSG);
@@ -181,9 +143,9 @@ public class YarnApplianceManagerFactory implements ApplianceManagerFactory, Clo
     YarnApplicationState appState = appReport.getYarnApplicationState();
     while (
         appState != YarnApplicationState.FINISHED &&
-        appState != YarnApplicationState.KILLED &&
-        appState != YarnApplicationState.FAILED
-    ) {
+            appState != YarnApplicationState.KILLED &&
+            appState != YarnApplicationState.FAILED
+        ) {
       Thread.sleep(100);
       appReport = mYarnClient.getApplicationReport(appId);
       appState = appReport.getYarnApplicationState();
@@ -199,6 +161,48 @@ public class YarnApplianceManagerFactory implements ApplianceManagerFactory, Clo
     );
 
     return null;
+  }
+
+  /**
+   * Creates a local resource definition for a path referring to a file on HDFS.
+   *
+   * @param resourcePath to a file on HDFS.
+   * @return a local resource for an appliance.
+   */
+  private LocalResource pathToLocalResource(
+      final Path resourcePath
+  ) throws IOException {
+    final FileStatus resourceStat =
+        FileSystem.get(mYarnClient.getConfig()).getFileStatus(resourcePath);
+    Preconditions.checkArgument(resourceStat.isFile());
+
+    final LocalResource appMasterJar = Records.newRecord(LocalResource.class);
+    appMasterJar.setResource(ConverterUtils.getYarnUrlFromPath(resourcePath));
+    appMasterJar.setSize(resourceStat.getLen());
+    appMasterJar.setTimestamp(resourceStat.getModificationTime());
+    appMasterJar.setType(LocalResourceType.FILE);
+    appMasterJar.setVisibility(LocalResourceVisibility.PUBLIC);
+
+    return appMasterJar;
+  }
+
+  private void setupAppMasterEnv(
+      final Map<String, String> appMasterEnv
+  ) {
+    for (String c : mYarnClient.getConfig().getStrings(
+        YarnConfiguration.YARN_APPLICATION_CLASSPATH,
+        YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH
+    )) {
+      Apps.addToEnvironment(
+          appMasterEnv, Environment.CLASSPATH.name(),
+          c.trim()
+      );
+    }
+    Apps.addToEnvironment(
+        appMasterEnv,
+        Environment.CLASSPATH.name(),
+        Environment.PWD.$() + File.separator + "*"
+    );
   }
 
   @Override

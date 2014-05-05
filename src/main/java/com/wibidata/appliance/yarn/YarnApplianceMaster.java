@@ -64,14 +64,11 @@ public class YarnApplianceMaster implements ApplianceManager {
   public static final String DUPLICATE_APPLIANCE_NAME_MSG = "";
 
   public static final String YARN_APPLIANCE_MASTER_JAVA_FLAGS = "-Xmx256M";
-
-  private static final Logger LOG = LoggerFactory.getLogger(YarnApplianceMaster.class);
-
   public static final String BASE_APPLIANCE_DISCOVERY_PATH = "/org/kiji/appliances";
   public static final int YARN_HEARTBEAT_INTERVAL_MS = 500;
   public static final String CURATOR_SERVICE_NAME = "appliance-master";
   public static final RetryPolicy CURATOR_RETRY_POLICY = new ExponentialBackoffRetry(1000, 3);
-
+  private static final Logger LOG = LoggerFactory.getLogger(YarnApplianceMaster.class);
   // Yarn connections.
   private final AMRMClientAsync<AMRMClient.ContainerRequest> mResourceManagerClient;
   private final NMClient mNodeManagerClient;
@@ -151,14 +148,52 @@ public class YarnApplianceMaster implements ApplianceManager {
     }
   }
 
-  private ServiceDiscovery<ApplianceMasterDetails> getServiceDiscovery() {
-    return ServiceDiscoveryBuilder
-        .builder(ApplianceMasterDetails.class)
-        .client(mCuratorClient)
-        .basePath(BASE_APPLIANCE_DISCOVERY_PATH)
-        .serializer(mJsonSerializer)
-        .thisInstance(mThisInstance)
-        .build();
+  // ApplicationMaster logic
+  public static void main(final String[] args) throws Exception {
+    final YarnConfiguration yarnConf = new YarnConfiguration();
+    final String masterAddress = InetAddress.getLocalHost().getHostName();
+//    final String masterAddress = NetUtils.getHostname();
+
+    // Parse cli arguments.
+    final String rawManagerConfiguration = args[0];
+    final ApplianceManagerConfiguration managerConfiguration =
+        ApplianceManagerConfiguration.fromAvro(
+            AvroUtils.<AvroApplianceManagerConfiguration>fromAvroJsonString(
+                rawManagerConfiguration,
+                AvroApplianceManagerConfiguration.getClassSchema()
+            )
+        );
+
+    final YarnApplianceMaster applianceMaster =
+        new YarnApplianceMaster(
+            masterAddress,
+            managerConfiguration,
+            yarnConf
+        );
+    LOG.info("Starting {}...", applianceMaster.toString());
+
+    System.out.println(String.format("Starting ApplianceMaster: %s", applianceMaster.toString()));
+    applianceMaster.start();
+    System.out.println("Started ApplianceMaster.");
+    try {
+      // TODO: Will this actually throw an InterruptedException?
+      applianceMaster.join();
+    } finally {
+      System.out.println("Stopping ApplianceMaster...");
+      applianceMaster.stop();
+      System.out.println("Stopped ApplianceMaster.");
+    }
+  }
+
+  @Override
+  public String toString() {
+    return Objects.toStringHelper(this)
+        .add("mResourceManagerClient", mResourceManagerClient)
+        .add("mNodeManagerClient", mNodeManagerClient)
+        .add("mCuratorClient", mCuratorClient)
+        .add("mJsonSerializer", mJsonSerializer)
+        .add("mThisInstance", mThisInstance)
+        .toString();
   }
 
   public void start() throws Exception {
@@ -211,6 +246,24 @@ public class YarnApplianceMaster implements ApplianceManager {
     // Unregister with ResourceManager.
     System.out.println("Unregistering YarnApplianceMaster...");
     mResourceManagerClient.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED, "", "");
+  }
+
+  private ServiceDiscovery<ApplianceMasterDetails> getServiceDiscovery() {
+    return ServiceDiscoveryBuilder
+        .builder(ApplianceMasterDetails.class)
+        .client(mCuratorClient)
+        .basePath(BASE_APPLIANCE_DISCOVERY_PATH)
+        .serializer(mJsonSerializer)
+        .thisInstance(mThisInstance)
+        .build();
+  }
+
+  public static String prepareArgs(
+      final String masterName,
+      final int masterPort,
+      final String curatorAddress
+  ) {
+    return String.format("%s %d %s", masterName, masterPort, curatorAddress);
   }
 
   @Override
@@ -278,62 +331,6 @@ public class YarnApplianceMaster implements ApplianceManager {
     //  - Actual getStatus of the corresponding service instances.
     System.out.println("Received a list call!");
     return null;
-  }
-
-  // ApplicationMaster logic
-  public static void main(final String[] args) throws Exception {
-    final YarnConfiguration yarnConf = new YarnConfiguration();
-    final String masterAddress = InetAddress.getLocalHost().getHostName();
-//    final String masterAddress = NetUtils.getHostname();
-
-    // Parse cli arguments.
-    final String rawManagerConfiguration = args[0];
-    final ApplianceManagerConfiguration managerConfiguration =
-        ApplianceManagerConfiguration.fromAvro(
-            AvroUtils.<AvroApplianceManagerConfiguration>fromAvroJsonString(
-                rawManagerConfiguration,
-                AvroApplianceManagerConfiguration.getClassSchema()
-            )
-        );
-
-    final YarnApplianceMaster applianceMaster =
-        new YarnApplianceMaster(
-            masterAddress,
-            managerConfiguration,
-            yarnConf
-        );
-    LOG.info("Starting {}...", applianceMaster.toString());
-
-    System.out.println(String.format("Starting ApplianceMaster: %s", applianceMaster.toString()));
-    applianceMaster.start();
-    System.out.println("Started ApplianceMaster.");
-    try {
-      // TODO: Will this actually throw an InterruptedException?
-      applianceMaster.join();
-    } finally {
-      System.out.println("Stopping ApplianceMaster...");
-      applianceMaster.stop();
-      System.out.println("Stopped ApplianceMaster.");
-    }
-  }
-
-  @Override
-  public String toString() {
-    return Objects.toStringHelper(this)
-        .add("mResourceManagerClient", mResourceManagerClient)
-        .add("mNodeManagerClient", mNodeManagerClient)
-        .add("mCuratorClient", mCuratorClient)
-        .add("mJsonSerializer", mJsonSerializer)
-        .add("mThisInstance", mThisInstance)
-        .toString();
-  }
-
-  public static String prepareArgs(
-      final String masterName,
-      final int masterPort,
-      final String curatorAddress
-  ) {
-    return String.format("%s %d %s", masterName, masterPort, curatorAddress);
   }
 
   public String getMasterAddress() {

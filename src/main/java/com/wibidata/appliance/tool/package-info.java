@@ -20,4 +20,5 @@
 /**
  * Contains command line tools for interacting with the ApplianceManager APIs.
  */
+
 package com.wibidata.appliance.tool;

@@ -33,6 +33,8 @@ import com.wibidata.appliance.record.ApplianceManagerStatus;
 public interface ApplianceManagerFactory {
   ApplianceManager connect(final ApplianceManagerId id);
 
-  ApplianceManagerStatus start(final ApplianceManagerConfiguration managerConfiguration) throws IOException, InterruptedException, YarnException;
+  ApplianceManagerStatus start(final ApplianceManagerConfiguration managerConfiguration)
+      throws IOException, InterruptedException, YarnException;
+
   ApplianceManagerStatus stop(final ApplianceManagerId id);
 }

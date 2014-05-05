@@ -20,4 +20,5 @@
 /**
  * Contains utility classes for the ApplianceManager.
  */
+
 package com.wibidata.appliance.util;

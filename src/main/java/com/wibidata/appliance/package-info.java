@@ -20,4 +20,5 @@
 /**
  * Contains interfaces/classes that compose the ApplianceManager APIs.
  */
+
 package com.wibidata.appliance;

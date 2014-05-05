@@ -58,22 +58,11 @@ public class TestYarnApplianceManager extends YarnClientTest {
     mManagerFactory = new YarnApplianceManagerFactory(getConfig());
   }
 
-  public ApplianceManagerConfiguration generateManagerConfiguration() {
-    // TODO: Give this real values.
-    return new ApplianceManagerConfiguration(
-        String.format("appliance-manager-%s", UUID.randomUUID().toString()),
-        64,
-        65893,
-        1,
-        "localhost:2181",
-        Lists.<Path>newArrayList()
-    );
-  }
-
-//  @Test
+  //  @Test
   @Ignore
   public void testGetStatus() throws Exception {
-    final ApplianceManagerStatus managerStatus = mManagerFactory.start(generateManagerConfiguration());
+    final ApplianceManagerStatus managerStatus =
+        mManagerFactory.start(generateManagerConfiguration());
     final ApplianceManager manager = mManagerFactory.connect(managerStatus.getManagerId());
     final ApplianceManagerId managerId = manager.getId();
 
@@ -101,10 +90,23 @@ public class TestYarnApplianceManager extends YarnClientTest {
     }
   }
 
-//  @Test
+  public ApplianceManagerConfiguration generateManagerConfiguration() {
+    // TODO: Give this real values.
+    return new ApplianceManagerConfiguration(
+        String.format("appliance-manager-%s", UUID.randomUUID().toString()),
+        64,
+        65893,
+        1,
+        "localhost:2181",
+        Lists.<Path>newArrayList()
+    );
+  }
+
+  //  @Test
   @Ignore
   public void testGetApplianceStatus() throws Exception {
-    final ApplianceManagerStatus managerStatus = mManagerFactory.start(generateManagerConfiguration());
+    final ApplianceManagerStatus managerStatus =
+        mManagerFactory.start(generateManagerConfiguration());
     final ApplianceManager manager = mManagerFactory.connect(managerStatus.getManagerId());
     final ApplianceId nonExistentApplianceId = new ApplianceId();
 
@@ -157,10 +159,11 @@ public class TestYarnApplianceManager extends YarnClientTest {
     }
   }
 
-//  @Test
+  //  @Test
   @Ignore
   public void testGetApplianceInstanceStatus() throws Exception {
-    final ApplianceManagerStatus managerStatus = mManagerFactory.start(generateManagerConfiguration());
+    final ApplianceManagerStatus managerStatus =
+        mManagerFactory.start(generateManagerConfiguration());
     final ApplianceManager manager = mManagerFactory.connect(managerStatus.getManagerId());
     final ApplianceInstanceId nonExistentApplianceInstanceId = new ApplianceInstanceId();
 
@@ -173,14 +176,19 @@ public class TestYarnApplianceManager extends YarnClientTest {
         exception = ise;
       }
       Assert.assertNotNull("An exception should have been thrown.", exception);
-      Assert.assertEquals(YarnApplianceMaster.NONEXISTENT_APPLIANCE_INSTANCE_ID_MSG, exception.getMessage());
+      Assert.assertEquals(
+          YarnApplianceMaster.NONEXISTENT_APPLIANCE_INSTANCE_ID_MSG,
+          exception.getMessage()
+      );
     }
 
     // Test getting the status of a deployed Appliance.
     final ApplianceId dummyApplianceId = manager.deploy(DUMMY_APPLICATION_CONF_1).getApplianceId();
-    final ApplianceInstanceId dummyApplianceInstanceId = manager.listApplianceInstances(dummyApplianceId).get(0);
+    final ApplianceInstanceId dummyApplianceInstanceId =
+        manager.listApplianceInstances(dummyApplianceId).get(0);
     {
-      final ApplianceInstanceStatus status = manager.getApplianceInstanceStatus(dummyApplianceInstanceId);
+      final ApplianceInstanceStatus status =
+          manager.getApplianceInstanceStatus(dummyApplianceInstanceId);
 
       Assert.assertEquals(dummyApplianceInstanceId, status.getInstanceId());
       // TODO: Validate other things.
@@ -196,7 +204,10 @@ public class TestYarnApplianceManager extends YarnClientTest {
         exception = ise;
       }
       Assert.assertNotNull("An exception should have been thrown.", exception);
-      Assert.assertEquals(YarnApplianceMaster.NONEXISTENT_APPLIANCE_INSTANCE_ID_MSG, exception.getMessage());
+      Assert.assertEquals(
+          YarnApplianceMaster.NONEXISTENT_APPLIANCE_INSTANCE_ID_MSG,
+          exception.getMessage()
+      );
     }
 
     // Test getting the status of an Appliance when the manager is not longer running.
@@ -213,17 +224,21 @@ public class TestYarnApplianceManager extends YarnClientTest {
     }
   }
 
-//  @Test
+  //  @Test
   @Ignore
   public void testListAppliances() throws Exception {
-    final ApplianceManagerStatus managerStatus = mManagerFactory.start(generateManagerConfiguration());
+    final ApplianceManagerStatus managerStatus =
+        mManagerFactory.start(generateManagerConfiguration());
     final ApplianceManager manager = mManagerFactory.connect(managerStatus.getManagerId());
 
     // Test listing appliances with none deployed.
     {
       final List<ApplianceId> appliances = manager.listAppliances();
       Assert.assertTrue(
-          String.format("No appliances should be listed as none have been deployed. Listed: %s", appliances),
+          String.format(
+              "No appliances should be listed as none have been deployed. Listed: %s",
+              appliances
+          ),
           appliances.isEmpty()
       );
     }
@@ -269,10 +284,11 @@ public class TestYarnApplianceManager extends YarnClientTest {
     }
   }
 
-//  @Test
+  //  @Test
   @Ignore
   public void testListApplianceInstances() throws Exception {
-    final ApplianceManagerStatus managerStatus = mManagerFactory.start(generateManagerConfiguration());
+    final ApplianceManagerStatus managerStatus =
+        mManagerFactory.start(generateManagerConfiguration());
     final ApplianceManager manager = mManagerFactory.connect(managerStatus.getManagerId());
     final ApplianceId nonExistentApplianceId = new ApplianceId();
 
@@ -327,10 +343,11 @@ public class TestYarnApplianceManager extends YarnClientTest {
     }
   }
 
-//  @Test
+  //  @Test
   @Ignore
   public void testDeploy() throws Exception {
-    final ApplianceManagerStatus managerStatus = mManagerFactory.start(generateManagerConfiguration());
+    final ApplianceManagerStatus managerStatus =
+        mManagerFactory.start(generateManagerConfiguration());
     final ApplianceManager manager = mManagerFactory.connect(managerStatus.getManagerId());
 
     // Test deploying applications.
@@ -393,10 +410,11 @@ public class TestYarnApplianceManager extends YarnClientTest {
     }
   }
 
-//  @Test
+  //  @Test
   @Ignore
   public void testUndeployAppliance() throws Exception {
-    final ApplianceManagerStatus managerStatus = mManagerFactory.start(generateManagerConfiguration());
+    final ApplianceManagerStatus managerStatus =
+        mManagerFactory.start(generateManagerConfiguration());
     final ApplianceManager manager = mManagerFactory.connect(managerStatus.getManagerId());
     final ApplianceId nonExistentApplianceId = new ApplianceId();
 
@@ -446,10 +464,11 @@ public class TestYarnApplianceManager extends YarnClientTest {
     }
   }
 
-//  @Test
+  //  @Test
   @Ignore
   public void testUndeployInstance() throws Exception {
-    final ApplianceManagerStatus managerStatus = mManagerFactory.start(generateManagerConfiguration());
+    final ApplianceManagerStatus managerStatus =
+        mManagerFactory.start(generateManagerConfiguration());
     final ApplianceManager manager = mManagerFactory.connect(managerStatus.getManagerId());
     final ApplianceInstanceId nonExistentApplianceInstanceId = new ApplianceInstanceId();
 
@@ -462,7 +481,10 @@ public class TestYarnApplianceManager extends YarnClientTest {
         exception = ise;
       }
       Assert.assertNotNull("An exception should have been thrown.", exception);
-      Assert.assertEquals(YarnApplianceMaster.NONEXISTENT_APPLIANCE_INSTANCE_ID_MSG, exception.getMessage());
+      Assert.assertEquals(
+          YarnApplianceMaster.NONEXISTENT_APPLIANCE_INSTANCE_ID_MSG,
+          exception.getMessage()
+      );
     }
 
     // Test undeploying appliance instances.

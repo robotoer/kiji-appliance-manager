@@ -53,6 +53,29 @@ public class ApplianceManagerConfiguration {
     mDependencies = dependencies;
   }
 
+  public static ApplianceManagerConfiguration fromAvro(
+      final AvroApplianceManagerConfiguration configuration
+  ) {
+    final List<Path> dependencies = Lists.transform(
+        configuration.getDependencies(),
+        new Function<String, Path>() {
+          @Nullable
+          @Override
+          public Path apply(@Nullable final String input) {
+            return new Path(input);
+          }
+        }
+    );
+    return new ApplianceManagerConfiguration(
+        configuration.getName(),
+        configuration.getMemory(),
+        configuration.getPort(),
+        configuration.getCores(),
+        configuration.getCuratorAddress(),
+        dependencies
+    );
+  }
+
   public String getName() {
     return mName;
   }
@@ -75,28 +98,5 @@ public class ApplianceManagerConfiguration {
 
   public List<Path> getDependencies() {
     return mDependencies;
-  }
-
-  public static ApplianceManagerConfiguration fromAvro(
-      final AvroApplianceManagerConfiguration configuration
-  ) {
-    final List<Path> dependencies = Lists.transform(
-        configuration.getDependencies(),
-        new Function<String, Path>() {
-          @Nullable
-          @Override
-          public Path apply(@Nullable final String input) {
-            return new Path(input);
-          }
-        }
-    );
-    return new ApplianceManagerConfiguration(
-        configuration.getName(),
-        configuration.getMemory(),
-        configuration.getPort(),
-        configuration.getCores(),
-        configuration.getCuratorAddress(),
-        dependencies
-    );
   }
 }

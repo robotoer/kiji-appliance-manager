@@ -20,4 +20,5 @@
 /**
  * Contains the YARN implementation of the ApplianceManager.
  */
+
 package com.wibidata.appliance.yarn;

@@ -30,15 +30,15 @@ public class ApplianceStatus {
     mApplianceId = applianceId;
   }
 
+  public static ApplianceStatus fromAvro(final AvroApplianceStatus status) {
+    return null;
+  }
+
   public ApplianceId getApplianceId() {
     return mApplianceId;
   }
 
   public AvroApplianceStatus toAvro() {
-    return null;
-  }
-
-  public static ApplianceStatus fromAvro(final AvroApplianceStatus status) {
     return null;
   }
 

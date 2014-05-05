@@ -58,7 +58,8 @@ public class AvroApplianceManagerImpl implements AvroApplianceManager {
   }
 
   @Override
-  public AvroApplianceStatus undeployAppliance(final AvroApplianceId id) throws AvroRemoteException {
+  public AvroApplianceStatus undeployAppliance(final AvroApplianceId id)
+      throws AvroRemoteException {
     try {
       return mApplianceManager.undeployAppliance(ApplianceId.fromAvro(id)).toAvro();
     } catch (IOException ioe) {
@@ -67,7 +68,8 @@ public class AvroApplianceManagerImpl implements AvroApplianceManager {
   }
 
   @Override
-  public AvroApplianceInstanceStatus undeployApplianceInstance(final AvroApplianceInstanceId id) throws AvroRemoteException {
+  public AvroApplianceInstanceStatus undeployApplianceInstance(final AvroApplianceInstanceId id)
+      throws AvroRemoteException {
     try {
       return mApplianceManager.undeployApplianceInstance(ApplianceInstanceId.fromAvro(id)).toAvro();
     } catch (IOException ioe) {
@@ -81,12 +83,14 @@ public class AvroApplianceManagerImpl implements AvroApplianceManager {
   }
 
   @Override
-  public AvroApplianceStatus getApplianceStatus(final AvroApplianceId id) throws AvroRemoteException {
+  public AvroApplianceStatus getApplianceStatus(final AvroApplianceId id)
+      throws AvroRemoteException {
     return null;
   }
 
   @Override
-  public AvroApplianceInstanceStatus getApplianceInstanceStatus(final AvroApplianceInstanceId id) throws AvroRemoteException {
+  public AvroApplianceInstanceStatus getApplianceInstanceStatus(final AvroApplianceInstanceId id)
+      throws AvroRemoteException {
     return null;
   }
 
@@ -109,7 +113,8 @@ public class AvroApplianceManagerImpl implements AvroApplianceManager {
   }
 
   @Override
-  public List<AvroApplianceInstanceId> listApplianceInstances(final AvroApplianceId id) throws AvroRemoteException {
+  public List<AvroApplianceInstanceId> listApplianceInstances(final AvroApplianceId id)
+      throws AvroRemoteException {
     try {
       return Lists.transform(
           mApplianceManager.listApplianceInstances(ApplianceId.fromAvro(id)),
